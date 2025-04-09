@@ -179,8 +179,29 @@ export function SignupForm({ onStepChange }: SignupFormProps) {
     return true;
   };
 
+  // Handle keyboard events
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // If Enter is pressed, prevent default submission and handle step navigation
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      
+      if (currentStep === STEPS.length - 1) {
+        void handleSubmit();
+      } else if (canProceed()) {
+        nextStep();
+      }
+    }
+  };
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-6">
+    <form 
+      onSubmit={(e) => { 
+        e.preventDefault(); 
+        handleSubmit(e); 
+      }} 
+      onKeyDown={handleKeyDown}
+      className="flex flex-col gap-6"
+    >
       {renderStep()}
       
       <div className="flex flex-col gap-4 mt-2">
