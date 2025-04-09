@@ -354,7 +354,7 @@ export function Thread() {
                   <div className="flex gap-3 items-center">
                     <LangGraphLogoSVG className="flex-shrink-0 h-8" />
                     <h1 className="text-2xl font-semibold tracking-tight">
-                      Agent Chat
+                      NutriBuddy Chat
                     </h1>
                   </div>
                 )}
