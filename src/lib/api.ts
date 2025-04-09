@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://diet-coach.interactions.ics.unisg.ch/temp/nutribuddy/backend';
+const API_BASE_URL = 'https://diet-coach.interactions.ics.unisg.ch/nutribuddy/backend';
 const AUTH_CREDENTIALS = 'Basic bnV0cmlidWRkeTpNMjZ2NFkzdUxoR3U=';
 
 export interface UserRegistrationData {
@@ -119,7 +119,7 @@ export class NutriBuddyApi {
 
   // Validate credentials
   public async validateCredentials(retailer: 'migros' | 'coop', email: string, password: string): Promise<boolean> {
-    const response = await fetch(`${API_BASE_URL}/scraper-api`, {
+    const response = await fetch(`${API_BASE_URL}/collector-api`, {
       method: 'GET',
       headers: this.getHeaders({
         'endpoint': `/validate/${retailer}-credentials`,
@@ -137,7 +137,7 @@ export class NutriBuddyApi {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${API_BASE_URL}/scraper-api`, {
+    const response = await fetch(`${API_BASE_URL}/collector-api`, {
       method: 'POST',
       headers: this.getHeaders({
         'endpoint': `/user/update-${retailer}`
