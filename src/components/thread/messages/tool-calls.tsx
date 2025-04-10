@@ -2,6 +2,7 @@ import { AIMessage, ToolMessage } from "@langchain/langgraph-sdk";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { PlotlyChart } from "./PlotlyChart";
 
 function isComplexValue(value: any): boolean {
   return Array.isArray(value) || (typeof value === "object" && value !== null);
@@ -67,6 +68,31 @@ export function ToolCalls({
 
 export function ToolResult({ message }: { message: ToolMessage }) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const isChart = message.name === 'chart' && message.artifact;
+
+  // If it's a chart, render the Plotly component
+  if (isChart) {
+    return (
+      <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
+        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h3 className="font-medium text-gray-900">
+              Chart
+              {message.tool_call_id && (
+                <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
+                  {message.tool_call_id}
+                </code>
+              )}
+            </h3>
+          </div>
+        </div>
+        <div className="p-4">
+          <PlotlyChart data={message.artifact} />
+        </div>
+      </div>
+    );
+  }
 
   let parsedContent: any;
   let isJsonContent = false;
@@ -170,16 +196,16 @@ export function ToolResult({ message }: { message: ToolMessage }) {
           (isJsonContent &&
             Array.isArray(parsedContent) &&
             parsedContent.length > 5)) && (
-          <motion.button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full py-2 flex items-center justify-center border-t-[1px] border-gray-200 text-gray-500 hover:text-gray-600 hover:bg-gray-50 transition-all ease-in-out duration-200 cursor-pointer"
-            initial={{ scale: 1 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            {isExpanded ? <ChevronUp /> : <ChevronDown />}
-          </motion.button>
-        )}
+            <motion.button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-full py-2 flex items-center justify-center border-t-[1px] border-gray-200 text-gray-500 hover:text-gray-600 hover:bg-gray-50 transition-all ease-in-out duration-200 cursor-pointer"
+              initial={{ scale: 1 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {isExpanded ? <ChevronUp /> : <ChevronDown />}
+            </motion.button>
+          )}
       </motion.div>
     </div>
   );
