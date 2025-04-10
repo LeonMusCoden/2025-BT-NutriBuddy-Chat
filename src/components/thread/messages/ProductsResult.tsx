@@ -194,9 +194,11 @@ function ProductCard({ product }: { product: Product }) {
             style={{ overflow: "hidden" }}
           >
             <div className="pt-1 pb-2 px-1 text-xs space-y-2 border-t border-gray-100 mt-1">
-              {/* Category */}
+              {/* General info */}
               <div className="text-gray-500">
-                Category: {product.category_lvl_1} › {product.category_lvl_2}
+                <div>Category: {product.category_lvl_1} › {product.category_lvl_2}</div>
+                <div>Retailer: {product.retailer}</div>
+                {product.storage && <div>Storage: {product.storage}</div>}
               </div>
               
               {/* Detailed nutrition in compact grid */}
@@ -212,12 +214,6 @@ function ProductCard({ product }: { product: Product }) {
                   <div>Fiber: {product.nutrients.fibersPrefix || ''}{product.nutrients.fibersG}g</div>
                   <div>Salt: {product.nutrients.saltPrefix || ''}{product.nutrients.saltG}g</div>
                 </div>
-              </div>
-              
-              {/* Additional info */}
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-gray-500">
-                <div>Retailer: {product.retailer}</div>
-                {product.storage && <div>Storage: {product.storage}</div>}
               </div>
             </div>
           </motion.div>
