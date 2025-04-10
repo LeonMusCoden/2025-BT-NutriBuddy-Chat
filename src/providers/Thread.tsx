@@ -10,8 +10,10 @@ import {
   useState,
   Dispatch,
   SetStateAction,
+  useEffect
 } from "react";
 import { createClient } from "./client";
+import { useAuth } from "./Auth";
 
 interface ThreadContextType {
   getThreads: () => Promise<Thread[]>;
@@ -22,6 +24,9 @@ interface ThreadContextType {
 }
 
 const ThreadContext = createContext<ThreadContextType | undefined>(undefined);
+
+const envApiUrl: string | undefined = import.meta.env.VITE_API_URL;
+const envAssistantId: string | undefined = import.meta.env.VITE_ASSISTANT_ID;
 
 function getThreadSearchMetadata(
   assistantId: string,
@@ -34,24 +39,39 @@ function getThreadSearchMetadata(
 }
 
 export function ThreadProvider({ children }: { children: ReactNode }) {
-  const [apiUrl] = useQueryState("apiUrl");
-  const [assistantId] = useQueryState("assistantId");
+  const [apiUrlParam] = useQueryState("apiUrl");
+  const [assistantIdParam] = useQueryState("assistantId");
+  const [effectiveApiUrl, setEffectiveApiUrl] = useState(apiUrlParam || envApiUrl || "");
+  const [effectiveAssistantId, setEffectiveAssistantId] = useState(assistantIdParam || envAssistantId || "");
+  // Update effective values if URL params change
+  useEffect(() => {
+    setEffectiveApiUrl(apiUrlParam || envApiUrl || "");
+  }, [apiUrlParam]);
+
+  useEffect(() => {
+    setEffectiveAssistantId(assistantIdParam || envAssistantId || "");
+  }, [assistantIdParam]);
+
   const [threads, setThreads] = useState<Thread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
+  const { user } = useAuth();
 
   const getThreads = useCallback(async (): Promise<Thread[]> => {
-    if (!apiUrl || !assistantId) return [];
-    const client = createClient(apiUrl, getApiKey() ?? undefined);
+    if (!effectiveApiUrl || !effectiveAssistantId) {
+      return [];
+    }
+    const client = createClient(effectiveApiUrl, getApiKey() ?? undefined);
 
     const threads = await client.threads.search({
       metadata: {
-        ...getThreadSearchMetadata(assistantId),
+        user: user?.token,
+        ...getThreadSearchMetadata(effectiveAssistantId),
       },
       limit: 100,
     });
 
     return threads;
-  }, [apiUrl, assistantId]);
+  }, [effectiveApiUrl, effectiveAssistantId, user]);
 
   const value = {
     getThreads,

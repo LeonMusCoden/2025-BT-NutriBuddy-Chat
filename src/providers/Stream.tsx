@@ -22,6 +22,8 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { getApiKey } from "@/lib/api-key";
 import { useThreads } from "./Thread";
 import { toast } from "sonner";
+import { createClient } from "./client";
+import { useAuth } from "./Auth";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[] };
 
@@ -76,6 +78,8 @@ const StreamSession = ({
 }) => {
   const [threadId, setThreadId] = useQueryState("threadId");
   const { getThreads, setThreads } = useThreads();
+  const client = createClient(apiUrl, apiKey || undefined);
+  const { user } = useAuth();
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
@@ -89,6 +93,8 @@ const StreamSession = ({
     },
     onThreadId: (id) => {
       setThreadId(id);
+      // Add user token to thread metadata
+      client.threads.update(id, {'metadata': {'user': user?.token}});
       // Refetch threads list when thread ID changes.
       // Wait for some seconds before fetching so we're able to get the new thread that was created.
       sleep().then(() => getThreads().then(setThreads).catch(console.error));
