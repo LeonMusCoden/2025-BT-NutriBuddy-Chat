@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { PlotlyChart } from "./PlotlyChart";
 import { GraphDBTable } from "./GraphDBTable";
+import { ProductsResult } from "./ProductsResult";
 
 function isComplexValue(value: any): boolean {
   return Array.isArray(value) || (typeof value === "object" && value !== null);
@@ -97,6 +98,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
   // Handle different tool message types
   const isChart = message.name === 'chart' && message.artifact;
   const isGraphDB = message.name === 'graphdb' && message.artifact;
+  const isProducts = message.name === 'products';
 
   // Toggle expansion state
   const toggleExpansion = () => {
@@ -176,7 +178,44 @@ export function ToolResult({ message }: { message: ToolMessage }) {
     );
   }
 
-  // Standard tool result rendering (for non-chart, non-graphdb results)
+  // If it's a products result, render the ProductsResult component
+  if (isProducts) {
+    try {
+
+      if (!Array.isArray(message.artifact)) {
+        throw new Error("Products data must be an array");
+      }
+
+      const products = message.artifact.map((jsonString: string) => JSON.parse(jsonString));
+      console.log(products);
+      
+      return (
+        <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
+          <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h3 className="font-medium text-gray-900">
+                Product Results
+                {message.tool_call_id && (
+                  <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
+                    {message.tool_call_id}
+                  </code>
+                )}
+              </h3>
+            </div>
+          </div>
+          
+          <div className="p-4">
+            <ProductsResult data={products} />
+          </div>
+        </div>
+      );
+    } catch (error) {
+      console.error("Error parsing products data:", error);
+      // Fall back to standard rendering if parsing fails
+    }
+  }
+
+  // Standard tool result rendering
   let parsedContent: any;
   let isJsonContent = false;
 
