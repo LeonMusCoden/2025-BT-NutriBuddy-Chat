@@ -123,8 +123,8 @@ export class NutriBuddyApi {
       method: 'GET',
       headers: this.getHeaders({
         'endpoint': `/validate/${retailer}-credentials`,
-        'migros-email': email,
-        'migros-password': password
+        [`${retailer}-email`]: email,
+        [`${retailer}-password`]: password
       })
     });
 
