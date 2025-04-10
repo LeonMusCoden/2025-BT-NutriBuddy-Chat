@@ -186,8 +186,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
         throw new Error("Products data must be an array");
       }
 
-      const products = message.artifact.map((jsonString: string) => JSON.parse(jsonString));
-      console.log(products);
+      const products = typeof message.artifact === 'string' ? message.artifact.map((jsonString: string) => JSON.parse(jsonString)) : message.artifact;
       
       return (
         <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
