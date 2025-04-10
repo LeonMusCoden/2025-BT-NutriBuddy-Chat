@@ -102,7 +102,11 @@ export function Thread() {
   );
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
-    parseAsBoolean.withDefault(false),
+    parseAsBoolean.withDefault(true),
+  );
+  const [hideToolResults, setHideToolResults] = useQueryState(
+    "hideToolResults",
+    parseAsBoolean.withDefault(false)
   );
   const [input, setInput] = useState("");
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
@@ -297,7 +301,7 @@ export function Thread() {
               >
                 <LangGraphLogoSVG width={32} height={32} />
                 <span className="text-xl font-semibold tracking-tight">
-                  NutriBuddy Chat 
+                  NutriBuddy Chat
                 </span>
               </motion.button>
             </div>
@@ -400,7 +404,7 @@ export function Thread() {
                     />
 
                     <div className="flex items-center justify-between p-2 pt-4">
-                      <div>
+                      <div className="flex flex-row items-center gap-6">
                         <div className="flex items-center space-x-2">
                           <Switch
                             id="render-tool-calls"
@@ -412,6 +416,19 @@ export function Thread() {
                             className="text-sm text-gray-600"
                           >
                             Hide Tool Calls
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="render-tool-results"
+                            checked={hideToolResults ?? false}
+                            onCheckedChange={setHideToolResults}
+                          />
+                          <Label
+                            htmlFor="render-tool-results"
+                            className="text-sm text-gray-600"
+                          >
+                            Hide Tool Results
                           </Label>
                         </div>
                       </div>

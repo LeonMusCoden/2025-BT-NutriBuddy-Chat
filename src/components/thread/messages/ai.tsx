@@ -78,6 +78,10 @@ export function AssistantMessage({
   const contentString = getContentString(content);
   const [hideToolCalls] = useQueryState(
     "hideToolCalls",
+    parseAsBoolean.withDefault(true),
+  );
+  const [hideToolResults] = useQueryState(
+    "hideToolResults",
     parseAsBoolean.withDefault(false),
   );
 
@@ -108,7 +112,7 @@ export function AssistantMessage({
   const hasAnthropicToolCalls = !!anthropicStreamedToolCalls?.length;
   const isToolResult = message?.type === "tool";
 
-  if (isToolResult && hideToolCalls) {
+  if (isToolResult && hideToolResults) {
     return null;
   }
 
