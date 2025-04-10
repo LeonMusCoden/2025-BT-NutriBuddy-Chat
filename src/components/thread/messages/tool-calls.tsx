@@ -1,6 +1,5 @@
-import { AIMessage, ToolMessage } from "@langchain/langgraph-sdk";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { PlotlyChart } from "./PlotlyChart";
 import { GraphDBTable } from "./GraphDBTable";
@@ -67,13 +66,44 @@ export function ToolCalls({
   );
 }
 
+// Reusable toggle button component
+function ToggleButton({ isExpanded, onClick }: { isExpanded: boolean; onClick: () => void }) {
+  return (
+    <motion.button
+      onClick={onClick}
+      className="w-full py-2 flex items-center justify-center border-t-[1px] border-gray-200 text-gray-500 hover:text-gray-600 hover:bg-gray-50 transition-all ease-in-out duration-200 cursor-pointer"
+      initial={{ scale: 1 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      {isExpanded ? (
+        <>
+          <ChevronUp className="w-4 h-4 mr-1" />
+          <span>Show less</span>
+        </>
+      ) : (
+        <>
+          <ChevronDown className="w-4 h-4 mr-1" />
+          <span>Show more</span>
+        </>
+      )}
+    </motion.button>
+  );
+}
+
 export function ToolResult({ message }: { message: ToolMessage }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Handle different tool message types
   const isChart = message.name === 'chart' && message.artifact;
   const isGraphDB = message.name === 'graphdb' && message.artifact;
 
-  // If it's a chart, render the Plotly component
+  // Toggle expansion state
+  const toggleExpansion = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  // If it's a chart, render the Plotly component with collapsible behavior
   if (isChart) {
     return (
       <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
@@ -89,14 +119,31 @@ export function ToolResult({ message }: { message: ToolMessage }) {
             </h3>
           </div>
         </div>
+        
         <div className="p-4">
-          <PlotlyChart data={message.artifact} />
+          {/* Use a container with masking in preview mode */}
+          <div 
+            className="w-full relative transition-all duration-300" 
+            style={{ 
+              maxHeight: isExpanded ? '2000px' : '250px', 
+              overflow: isExpanded ? 'visible' : 'hidden'
+            }}
+          >
+            <PlotlyChart data={message.artifact} />
+            
+            {/* Gradient overlay only when in preview mode */}
+            {!isExpanded && (
+              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
+          </div>
         </div>
+        
+        <ToggleButton isExpanded={isExpanded} onClick={toggleExpansion} />
       </div>
     );
   }
 
-  // If it's a GraphDB result, render the GraphDBTable component
+  // If it's a GraphDB result, render the GraphDBTable component with collapsible behavior
   if (isGraphDB) {
     return (
       <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
@@ -112,18 +159,29 @@ export function ToolResult({ message }: { message: ToolMessage }) {
             </h3>
           </div>
         </div>
-        <div className="p-4">
-          <GraphDBTable data={message.artifact} />
+
+        <div className="relative">
+          <div className={`p-4 ${!isExpanded ? "max-h-[200px] overflow-hidden" : ""}`}>
+            <GraphDBTable data={message.artifact} />
+
+            {/* Gradient overlay when collapsed */}
+            {!isExpanded && (
+              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
+          </div>
+
+          <ToggleButton isExpanded={isExpanded} onClick={toggleExpansion} />
         </div>
       </div>
     );
   }
 
+  // Standard tool result rendering (for non-chart, non-graphdb results)
   let parsedContent: any;
   let isJsonContent = false;
 
   try {
-    if (typeof message.content === "string") {
+    if (typeof message.content === 'string') {
       parsedContent = JSON.parse(message.content);
       isJsonContent = true;
     }
@@ -165,73 +223,53 @@ export function ToolResult({ message }: { message: ToolMessage }) {
           )}
         </div>
       </div>
-      <motion.div
-        className="min-w-full bg-gray-100"
-        initial={false}
-        animate={{ height: "auto" }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="p-3">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={isExpanded ? "expanded" : "collapsed"}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {isJsonContent ? (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <tbody className="divide-y divide-gray-200">
-                    {(Array.isArray(parsedContent)
-                      ? isExpanded
-                        ? parsedContent
-                        : parsedContent.slice(0, 5)
-                      : Object.entries(parsedContent)
-                    ).map((item, argIdx) => {
-                      const [key, value] = Array.isArray(parsedContent)
-                        ? [argIdx, item]
-                        : [item[0], item[1]];
-                      return (
-                        <tr key={argIdx}>
-                          <td className="px-4 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
-                            {key}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-gray-500">
-                            {isComplexValue(value) ? (
-                              <code className="bg-gray-50 rounded px-2 py-1 font-mono text-sm break-all">
-                                {JSON.stringify(value, null, 2)}
-                              </code>
-                            ) : (
-                              String(value)
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <code className="text-sm block">{displayedContent}</code>
-              )}
-            </motion.div>
-          </AnimatePresence>
+      <div className="min-w-full bg-gray-100">
+        <div className="p-3 relative">
+          <div className={!isExpanded && shouldTruncate ? "relative" : ""}>
+            {isJsonContent ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200">
+                  {(Array.isArray(parsedContent)
+                    ? isExpanded
+                      ? parsedContent
+                      : parsedContent.slice(0, 5)
+                    : Object.entries(parsedContent)
+                  ).map((item, argIdx) => {
+                    const [key, value] = Array.isArray(parsedContent)
+                      ? [argIdx, item]
+                      : [item[0], item[1]];
+                    return (
+                      <tr key={argIdx}>
+                        <td className="px-4 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                          {key}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-500">
+                          {isComplexValue(value) ? (
+                            <code className="bg-gray-50 rounded px-2 py-1 font-mono text-sm break-all">
+                              {JSON.stringify(value, null, 2)}
+                            </code>
+                          ) : (
+                            String(value)
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <code className="text-sm block">{displayedContent}</code>
+            )}
+          </div>
         </div>
+
         {((shouldTruncate && !isJsonContent) ||
           (isJsonContent &&
             Array.isArray(parsedContent) &&
             parsedContent.length > 5)) && (
-            <motion.button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full py-2 flex items-center justify-center border-t-[1px] border-gray-200 text-gray-500 hover:text-gray-600 hover:bg-gray-50 transition-all ease-in-out duration-200 cursor-pointer"
-              initial={{ scale: 1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {isExpanded ? <ChevronUp /> : <ChevronDown />}
-            </motion.button>
+            <ToggleButton isExpanded={isExpanded} onClick={toggleExpansion} />
           )}
-      </motion.div>
+      </div>
     </div>
   );
 }
