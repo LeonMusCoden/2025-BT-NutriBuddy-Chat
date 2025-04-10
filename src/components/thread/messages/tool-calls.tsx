@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { PlotlyChart } from "./PlotlyChart";
+import { GraphDBTable } from "./GraphDBTable";
 
 function isComplexValue(value: any): boolean {
   return Array.isArray(value) || (typeof value === "object" && value !== null);
@@ -70,6 +71,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isChart = message.name === 'chart' && message.artifact;
+  const isGraphDB = message.name === 'graphdb' && message.artifact;
 
   // If it's a chart, render the Plotly component
   if (isChart) {
@@ -89,6 +91,29 @@ export function ToolResult({ message }: { message: ToolMessage }) {
         </div>
         <div className="p-4">
           <PlotlyChart data={message.artifact} />
+        </div>
+      </div>
+    );
+  }
+
+  // If it's a GraphDB result, render the GraphDBTable component
+  if (isGraphDB) {
+    return (
+      <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
+        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h3 className="font-medium text-gray-900">
+              Database Result
+              {message.tool_call_id && (
+                <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
+                  {message.tool_call_id}
+                </code>
+              )}
+            </h3>
+          </div>
+        </div>
+        <div className="p-4">
+          <GraphDBTable data={message.artifact} />
         </div>
       </div>
     );
