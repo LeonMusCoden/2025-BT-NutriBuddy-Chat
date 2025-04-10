@@ -152,8 +152,7 @@ export function AssistantMessage({
               <GenericInterruptView interrupt={threadInterrupt.value} />
             ) : null}
 
-            {/* Only show branch switcher and command bar for the last message */}
-            {isLastMessage && (
+            {(message?.content || !hideToolCalls) && (
               <div
                 className={cn(
                   "flex gap-2 items-center mr-auto transition-opacity",
