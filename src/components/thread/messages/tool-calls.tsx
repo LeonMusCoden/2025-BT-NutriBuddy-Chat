@@ -108,7 +108,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
   // If it's a chart, render the Plotly component with collapsible behavior
   if (isChart) {
     return (
-      <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <h3 className="font-medium text-gray-900">
@@ -189,7 +189,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
       const products = typeof message.artifact === 'string' ? message.artifact.map((jsonString: string) => JSON.parse(jsonString)) : message.artifact;
       
       return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
+        <div className="border border-gray-200 rounded-lg overflow-hidden w-full max-w-full flex-grow">
           <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="font-medium text-gray-900">

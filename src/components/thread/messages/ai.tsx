@@ -117,65 +117,67 @@ export function AssistantMessage({
   }
 
   return (
-    <div className="flex items-start mr-auto gap-2 group">
+    <>
       {isToolResult ? (
         <ToolResult message={message} />
       ) : (
-        <div className="flex flex-col gap-2">
-          {contentString.length > 0 && (
-            <div className="py-1">
-              <MarkdownText>{contentString}</MarkdownText>
-            </div>
-          )}
-
-          {!hideToolCalls && (
-            <>
-              {(hasToolCalls && toolCallsHaveContents && (
-                <ToolCalls toolCalls={message.tool_calls} />
-              )) ||
-                (hasAnthropicToolCalls && (
-                  <ToolCalls toolCalls={anthropicStreamedToolCalls} />
-                )) ||
-                (hasToolCalls && <ToolCalls toolCalls={message.tool_calls} />)}
-            </>
-          )}
-
-          {message && <CustomComponent message={message} thread={thread} />}
-          {isAgentInboxInterruptSchema(threadInterrupt?.value) &&
-            (isLastMessage || hasNoAIOrToolMessages) && (
-              <ThreadView interrupt={threadInterrupt.value} />
+        <div className="flex items-start mr-auto gap-2 group">
+          <div className="flex flex-col gap-2">
+            {contentString.length > 0 && (
+              <div className="py-1">
+                <MarkdownText>{contentString}</MarkdownText>
+              </div>
             )}
-          {threadInterrupt?.value &&
-          !isAgentInboxInterruptSchema(threadInterrupt.value) &&
-          isLastMessage ? (
-            <GenericInterruptView interrupt={threadInterrupt.value} />
-          ) : null}
-          
-          {/* Only show branch switcher and command bar for the last message */}
-          {isLastMessage && (
-            <div
-              className={cn(
-                "flex gap-2 items-center mr-auto transition-opacity",
-                "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+
+            {!hideToolCalls && (
+              <>
+                {(hasToolCalls && toolCallsHaveContents && (
+                  <ToolCalls toolCalls={message.tool_calls} />
+                )) ||
+                  (hasAnthropicToolCalls && (
+                    <ToolCalls toolCalls={anthropicStreamedToolCalls} />
+                  )) ||
+                  (hasToolCalls && <ToolCalls toolCalls={message.tool_calls} />)}
+              </>
+            )}
+
+            {message && <CustomComponent message={message} thread={thread} />}
+            {isAgentInboxInterruptSchema(threadInterrupt?.value) &&
+              (isLastMessage || hasNoAIOrToolMessages) && (
+                <ThreadView interrupt={threadInterrupt.value} />
               )}
-            >
-              <BranchSwitcher
-                branch={meta?.branch}
-                branchOptions={meta?.branchOptions}
-                onSelect={(branch) => thread.setBranch(branch)}
-                isLoading={isLoading}
-              />
-              <CommandBar
-                content={contentString}
-                isLoading={isLoading}
-                isAiMessage={true}
-                handleRegenerate={() => handleRegenerate(parentCheckpoint)}
-              />
-            </div>
-          )}
+            {threadInterrupt?.value &&
+              !isAgentInboxInterruptSchema(threadInterrupt.value) &&
+              isLastMessage ? (
+              <GenericInterruptView interrupt={threadInterrupt.value} />
+            ) : null}
+
+            {/* Only show branch switcher and command bar for the last message */}
+            {isLastMessage && (
+              <div
+                className={cn(
+                  "flex gap-2 items-center mr-auto transition-opacity",
+                  "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+                )}
+              >
+                <BranchSwitcher
+                  branch={meta?.branch}
+                  branchOptions={meta?.branchOptions}
+                  onSelect={(branch) => thread.setBranch(branch)}
+                  isLoading={isLoading}
+                />
+                <CommandBar
+                  content={contentString}
+                  isLoading={isLoading}
+                  isAiMessage={true}
+                  handleRegenerate={() => handleRegenerate(parentCheckpoint)}
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

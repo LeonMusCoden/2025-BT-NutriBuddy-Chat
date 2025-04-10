@@ -26,8 +26,6 @@ export function PlotlyChart({ data }: PlotlyChartProps) {
       Plotly.react(chartRef.current, plotlyData.data, {
         ...plotlyData.layout,
         autosize: true,
-        height: '100%',
-        width: '100%',
       }, {
         responsive: true,
         displayModeBar: true,
