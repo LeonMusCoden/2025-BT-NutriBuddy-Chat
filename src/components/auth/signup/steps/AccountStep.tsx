@@ -4,80 +4,46 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useStepValidation, ValidationResult } from "@/hooks/useStepValidation";
+import { useSignup } from "@/context/SignupContext";
 
-type AccountStepData = {
-  email: string;
-  password: string;
-};
-
-const validateAccount = (data: AccountStepData): ValidationResult => {
-  const errors: Record<string, string> = {};
-  
-  // Email validation
-  if (!!data.email && !/\S+@\S+\.\S+/.test(data.email)) {
-    errors.email = "Please enter a valid email address";
-  }
-  
-  // Password validation
-  if (!!data.password && data.password.length < 8) {
-    errors.password = "Password must be at least 8 characters";
-  }
-  
-  return {
-    isValid: (Object.keys(errors).length === 0 && !!data.email && !!data.password),
-    errors
-  };
-};
-
-type AccountStepProps = {
-  email: string;
-  password: string;
-  updateData: (updates: Partial<{ email: string; password: string }>) => void;
-  onValidationChange: (isValid: boolean) => void;
-};
-
-export function AccountStep({ 
-  email,
-  password,
-  updateData,
-  onValidationChange
-}: AccountStepProps) {
+export function AccountStep() {
   const navigate = useNavigate();
-  
   const { 
-    data, 
-    updateField, 
-    isValid, 
-    hasError, 
-    getError, 
-    touchAllFields 
-  } = useStepValidation<AccountStepData>(
-    { email, password },
-    validateAccount
-  );
-  
-  // When local form data changes, update the parent component
-  useEffect(() => {
-    if (data.email !== email || data.password !== password) {
-      updateData({ 
-        email: data.email, 
-        password: data.password 
-      });
-    }
-  }, [data, email, password, updateData]);
-  
-  // Inform parent about validation status
-  useEffect(() => {
-    onValidationChange(isValid);
-  }, [isValid, onValidationChange]);
-  
-  // Touch all fields when user tries to proceed
+    formData, 
+    updateFormData,
+    errors,
+    touchedFields,
+    setFieldTouched
+  } = useSignup();
+
+  // Touch all fields when component unmounts
   useEffect(() => {
     return () => {
-      touchAllFields();
+      setFieldTouched('email', true);
+      setFieldTouched('password', true);
     };
-  }, [touchAllFields]);
+  }, [setFieldTouched]);
+
+  // Update form data
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateFormData({ email: e.target.value });
+    setFieldTouched('email', true);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateFormData({ password: e.target.value });
+    setFieldTouched('password', true);
+  };
+
+  // Check if field has an error
+  const hasError = (field: string): boolean => {
+    return touchedFields[field] && !!errors[field];
+  };
+
+  // Get error message for a field
+  const getError = (field: string): string | undefined => {
+    return hasError(field) ? errors[field] : undefined;
+  };
 
   return (
     <>
@@ -91,8 +57,8 @@ export function AccountStep({
             name="email"
             type="email"
             autoComplete="email"
-            value={data.email}
-            onChange={(e) => updateField('email', e.target.value)}
+            value={formData.email}
+            onChange={handleEmailChange}
             className={`bg-background ${hasError('email') ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
             required
           />
@@ -109,8 +75,8 @@ export function AccountStep({
             id="password"
             name="password"
             autoComplete="new-password"
-            value={data.password}
-            onChange={(e) => updateField('password', e.target.value)}
+            value={formData.password}
+            onChange={handlePasswordChange}
             className={`bg-background ${hasError('password') ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
             required
           />

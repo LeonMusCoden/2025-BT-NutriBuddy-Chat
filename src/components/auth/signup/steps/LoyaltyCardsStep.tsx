@@ -4,123 +4,49 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { nutriBuddyApi } from "@/lib/api";
 import { RetailerCredentials, ConnectedLoyaltyCardState } from "../types";
-import { useStepValidation, ValidationResult } from "@/hooks/useStepValidation";
 import { RetailerCredentialsForm } from "../components/RetailerCredentialsForm";
+import { useSignup } from "@/context/SignupContext";
 
-type LoyaltyCardsData = {
-  migros: RetailerCredentials;
-  coop: RetailerCredentials;
-};
-
-const validateLoyaltyCards = (data: LoyaltyCardsData): ValidationResult => {
-  const errors: Record<string, string> = {};
-  
-  // Only validate when a retailer is connected
-  if (data.migros.isConnected) {
-    if (!data.migros.email) {
-      errors['migros.email'] = "Migros email is required";
-    }
-    if (!data.migros.password) {
-      errors['migros.password'] = "Migros password is required";
-    }
-    if (data.migros.validationStatus === 'invalid') {
-      errors['migros.credentials'] = "Migros credentials are invalid";
-    }
-  }
-  
-  if (data.coop.isConnected) {
-    if (!data.coop.email) {
-      errors['coop.email'] = "Coop email is required";
-    }
-    if (!data.coop.password) {
-      errors['coop.password'] = "Coop password is required";
-    }
-    if (data.coop.validationStatus === 'invalid') {
-      errors['coop.credentials'] = "Coop credentials are invalid";
-    }
-  }
-  
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-
-type LoyaltyCardsStepProps = {
-  migros: RetailerCredentials;
-  coop: RetailerCredentials;
-  updateData: (updates: {
-    migros?: Partial<RetailerCredentials>;
-    coop?: Partial<RetailerCredentials>;
-    connectedLoyaltyCard?: ConnectedLoyaltyCardState;
-  }) => void;
-  onValidationChange: (isValid: boolean) => void;
-};
-
-export function LoyaltyCardsStep({
-  migros,
-  coop,
-  updateData,
-  onValidationChange
-}: LoyaltyCardsStepProps) {
+export function LoyaltyCardsStep() {
   const { 
-    data,
-    isValid,
-    updateFields,
-    hasError,
-    getError
-  } = useStepValidation<LoyaltyCardsData>(
-    { migros, coop },
-    validateLoyaltyCards
-  );
+    formData, 
+    updateFormData, 
+    errors, 
+    touchedFields 
+  } = useSignup();
   
-  // Update parent component when local data changes
+  const { migros, coop } = formData;
+
+  // Update connected loyalty card status when retailer connections change
   useEffect(() => {
-    const updates: any = {};
-    if (data.migros !== migros) {
-      updates.migros = data.migros;
-    }
-    if (data.coop !== coop) {
-      updates.coop = data.coop;
+    let connectedLoyaltyCard: ConnectedLoyaltyCardState = null;
+    
+    if (migros.isConnected && coop.isConnected) {
+      connectedLoyaltyCard = 'both';
+    } else if (migros.isConnected) {
+      connectedLoyaltyCard = 'migros';
+    } else if (coop.isConnected) {
+      connectedLoyaltyCard = 'coop';
     }
     
-    if (Object.keys(updates).length > 0) {
-      // Determine connected loyalty card value
-      let connectedLoyaltyCard: ConnectedLoyaltyCardState = null;
-      if (data.migros.isConnected && data.coop.isConnected) {
-        connectedLoyaltyCard = 'both';
-      } else if (data.migros.isConnected) {
-        connectedLoyaltyCard = 'migros';
-      } else if (data.coop.isConnected) {
-        connectedLoyaltyCard = 'coop';
-      }
-      
-      updateData({
-        ...updates,
-        connectedLoyaltyCard
-      });
-    }
-  }, [data, migros, coop, updateData]);
-  
-  // Inform parent about validation status
-  useEffect(() => {
-    onValidationChange(isValid);
-  }, [isValid, onValidationChange]);
-  
+    updateFormData({ connectedLoyaltyCard });
+  }, [migros.isConnected, coop.isConnected, updateFormData]);
+
+  // Toggle retailer connection
   const handleToggleChange = (retailer: 'migros' | 'coop', isChecked: boolean) => {
     if (retailer === 'migros') {
-      updateFields({
+      updateFormData({
         migros: {
-          ...data.migros,
+          ...migros,
           isConnected: isChecked,
           // Reset validation when toggling off
           ...(isChecked ? {} : { validationStatus: 'idle', email: '', password: '' })
         }
       });
     } else {
-      updateFields({
+      updateFormData({
         coop: {
-          ...data.coop,
+          ...coop,
           isConnected: isChecked,
           // Reset validation when toggling off
           ...(isChecked ? {} : { validationStatus: 'idle', email: '', password: '' })
@@ -129,8 +55,9 @@ export function LoyaltyCardsStep({
     }
   };
   
+  // Validate retailer credentials
   const validateCredentials = async (retailer: 'migros' | 'coop') => {
-    const retailerData = data[retailer];
+    const retailerData = retailer === 'migros' ? migros : coop;
     const { email, password } = retailerData;
     
     if (!email || !password) {
@@ -139,22 +66,21 @@ export function LoyaltyCardsStep({
     }
 
     // Update validation status to 'validating'
-    updateFields({
-      [retailer]: {
-        ...retailerData,
-        validationStatus: 'validating'
-      }
-    });
+    const updates = retailer === 'migros' 
+      ? { migros: { ...migros, validationStatus: 'validating' } }
+      : { coop: { ...coop, validationStatus: 'validating' } };
+    
+    updateFormData(updates);
     
     try {
       const isValid = await nutriBuddyApi.validateCredentials(retailer, email, password);
       
-      updateFields({
-        [retailer]: {
-          ...retailerData,
-          validationStatus: isValid ? 'valid' : 'invalid'
-        }
-      });
+      // Update validation status based on result
+      const statusUpdates = retailer === 'migros'
+        ? { migros: { ...migros, validationStatus: isValid ? 'valid' : 'invalid' } }
+        : { coop: { ...coop, validationStatus: isValid ? 'valid' : 'invalid' } };
+      
+      updateFormData(statusUpdates);
       
       if (isValid) {
         toast.success(`${retailer.charAt(0).toUpperCase() + retailer.slice(1)} credentials validated successfully`);
@@ -162,15 +88,33 @@ export function LoyaltyCardsStep({
         toast.error(`Invalid ${retailer} credentials`);
       }
     } catch (error) {
-      updateFields({
-        [retailer]: {
-          ...retailerData,
-          validationStatus: 'invalid'
-        }
-      });
+      // Update validation status to 'invalid' on error
+      const errorUpdates = retailer === 'migros'
+        ? { migros: { ...migros, validationStatus: 'invalid' } }
+        : { coop: { ...coop, validationStatus: 'invalid' } };
+      
+      updateFormData(errorUpdates);
       toast.error(`Failed to validate ${retailer} credentials`);
       console.error(`${retailer} validation error:`, error);
     }
+  };
+
+  // Update retailer credentials
+  const updateRetailerCredentials = (retailer: 'migros' | 'coop', updates: Partial<RetailerCredentials>) => {
+    if (retailer === 'migros') {
+      updateFormData({
+        migros: { ...migros, ...updates }
+      });
+    } else {
+      updateFormData({
+        coop: { ...coop, ...updates }
+      });
+    }
+  };
+
+  // Check if a field has an error
+  const hasError = (field: string): boolean => {
+    return touchedFields[field] && !!errors[field];
   };
 
   return (
@@ -182,20 +126,18 @@ export function LoyaltyCardsStep({
             <p className="text-muted-foreground text-sm">Connect your Migros purchase history</p>
           </div>
           <Switch
-            checked={data.migros.isConnected}
+            checked={migros.isConnected}
             onCheckedChange={(checked) => handleToggleChange('migros', checked)}
           />
         </div>
         
-        {data.migros.isConnected && (
+        {migros.isConnected && (
           <RetailerCredentialsForm
             retailer="migros"
-            credentials={data.migros}
-            updateCredentials={(updates) => updateFields({ 
-              migros: { ...data.migros, ...updates } 
-            })}
+            credentials={migros}
+            updateCredentials={(updates) => updateRetailerCredentials('migros', updates)}
             onValidate={() => validateCredentials('migros')}
-            error={hasError('migros.credentials') ? getError('migros.credentials') : undefined}
+            error={hasError('migros.credentials') ? errors['migros.credentials'] : undefined}
           />
         )}
         
@@ -207,20 +149,18 @@ export function LoyaltyCardsStep({
             <p className="text-muted-foreground text-sm">Connect your Coop purchase history</p>
           </div>
           <Switch
-            checked={data.coop.isConnected}
+            checked={coop.isConnected}
             onCheckedChange={(checked) => handleToggleChange('coop', checked)}
           />
         </div>
         
-        {data.coop.isConnected && (
+        {coop.isConnected && (
           <RetailerCredentialsForm
             retailer="coop"
-            credentials={data.coop}
-            updateCredentials={(updates) => updateFields({ 
-              coop: { ...data.coop, ...updates } 
-            })}
+            credentials={coop}
+            updateCredentials={(updates) => updateRetailerCredentials('coop', updates)}
             onValidate={() => validateCredentials('coop')}
-            error={hasError('coop.credentials') ? getError('coop.credentials') : undefined}
+            error={hasError('coop.credentials') ? errors['coop.credentials'] : undefined}
           />
         )}
       </div>

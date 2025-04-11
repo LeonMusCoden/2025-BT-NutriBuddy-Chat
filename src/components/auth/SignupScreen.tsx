@@ -2,6 +2,7 @@ import { useState } from "react";
 import { SignupForm } from "./signup/SignupForm";
 import { SignupHeader } from "./signup/components/SignupHeader";
 import { STEPS } from "./signup/types";
+import { SignupProvider } from "@/context/SignupContext";
 
 export function SignupScreen() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -12,7 +13,9 @@ export function SignupScreen() {
         <SignupHeader stepConfig={STEPS[currentStep]} />
 
         <div className="flex flex-col gap-6 p-6 bg-muted/50">
-          <SignupForm onStepChange={setCurrentStep} />
+          <SignupProvider onStepChange={setCurrentStep}>
+            <SignupForm />
+          </SignupProvider>
         </div>
       </div>
     </div>
