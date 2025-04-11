@@ -119,7 +119,7 @@ export function AssistantMessage({
   return (
     <>
       {isToolResult ? (
-        <ToolResult message={message} />
+        <ToolResult message={message} show_call_id={!hideToolCalls}/>
       ) : (
         <div className="flex items-start mr-auto gap-2 group">
           <div className="flex flex-col gap-2">

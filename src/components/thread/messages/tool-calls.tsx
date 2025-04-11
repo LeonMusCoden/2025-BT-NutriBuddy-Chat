@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { PlotlyChart } from "./PlotlyChart";
 import { GraphDBTable } from "./GraphDBTable";
 import { ProductsResult } from "./ProductsResult";
+import { ToolMessage, AIMessage } from "@langchain/langgraph-sdk";
 
 function isComplexValue(value: any): boolean {
   return Array.isArray(value) || (typeof value === "object" && value !== null);
@@ -92,7 +93,24 @@ function ToggleButton({ isExpanded, onClick }: { isExpanded: boolean; onClick: (
   );
 }
 
-export function ToolResult({ message }: { message: ToolMessage }) {
+function ToolCallHeader({ title, tool_call_id, show_call_id }: { title: string, tool_call_id: string, show_call_id: boolean }) {
+  return (
+    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h3 className="font-medium text-gray-900">
+          {title}
+          {(tool_call_id && show_call_id) && (
+            <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
+              {tool_call_id}
+            </code>
+          )}
+        </h3>
+      </div>
+    </div>
+  );
+}
+
+export function ToolResult({ message, show_call_id = true }: { message: ToolMessage, show_call_id: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Handle different tool message types
@@ -109,37 +127,26 @@ export function ToolResult({ message }: { message: ToolMessage }) {
   if (isChart) {
     return (
       <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h3 className="font-medium text-gray-900">
-              Chart
-              {message.tool_call_id && (
-                <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
-                  {message.tool_call_id}
-                </code>
-              )}
-            </h3>
-          </div>
-        </div>
-        
+        <ToolCallHeader title={"Chart"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
+
         <div className="p-4">
           {/* Use a container with masking in preview mode */}
-          <div 
-            className="w-full relative transition-all duration-300" 
-            style={{ 
-              maxHeight: isExpanded ? '2000px' : '250px', 
+          <div
+            className="w-full relative transition-all duration-300"
+            style={{
+              maxHeight: isExpanded ? '2000px' : '250px',
               overflow: isExpanded ? 'visible' : 'hidden'
             }}
           >
             <PlotlyChart data={message.artifact} />
-            
+
             {/* Gradient overlay only when in preview mode */}
             {!isExpanded && (
               <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
             )}
           </div>
         </div>
-        
+
         <ToggleButton isExpanded={isExpanded} onClick={toggleExpansion} />
       </div>
     );
@@ -149,18 +156,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
   if (isGraphDB) {
     return (
       <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
-        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h3 className="font-medium text-gray-900">
-              Database Result
-              {message.tool_call_id && (
-                <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
-                  {message.tool_call_id}
-                </code>
-              )}
-            </h3>
-          </div>
-        </div>
+        <ToolCallHeader title={"Database Result"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
 
         <div className="relative">
           <div className={`p-4 ${!isExpanded ? "max-h-[200px] overflow-hidden" : ""}`}>
@@ -187,22 +183,11 @@ export function ToolResult({ message }: { message: ToolMessage }) {
       }
 
       const products = typeof message.artifact === 'string' ? message.artifact.map((jsonString: string) => JSON.parse(jsonString)) : message.artifact;
-      
+
       return (
         <div className="border border-gray-200 rounded-lg overflow-hidden w-full max-w-full flex-grow">
-          <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="font-medium text-gray-900">
-                Product Results
-                {message.tool_call_id && (
-                  <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
-                    {message.tool_call_id}
-                  </code>
-                )}
-              </h3>
-            </div>
-          </div>
-          
+          <ToolCallHeader title={"Product Result"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
+
           <div className="p-4">
             <ProductsResult data={products} />
           </div>
@@ -242,25 +227,8 @@ export function ToolResult({ message }: { message: ToolMessage }) {
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          {message.name ? (
-            <h3 className="font-medium text-gray-900">
-              Tool Result:{" "}
-              <code className="bg-gray-100 px-2 py-1 rounded">
-                {message.name}
-              </code>
-            </h3>
-          ) : (
-            <h3 className="font-medium text-gray-900">Tool Result</h3>
-          )}
-          {message.tool_call_id && (
-            <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
-              {message.tool_call_id}
-            </code>
-          )}
-        </div>
-      </div>
+      <ToolCallHeader title={message.name ? "Tool Result: " + message.name : "Tool Result"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
+
       <div className="min-w-full bg-gray-100">
         <div className="p-3 relative">
           <div className={!isExpanded && shouldTruncate ? "relative" : ""}>
