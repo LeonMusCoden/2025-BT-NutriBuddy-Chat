@@ -48,21 +48,21 @@ export function useProfileFormValidation(
       pattern: /^\d+$/,
       min: 18,
       max: 100,
-      errorMessage: 'Age must be a number between 12 and 120'
+      errorMessage: 'Age must be a number between 18 and 100'
     },
     height: {
       required: false,
       pattern: /^\d+$/,
       min: 100,
       max: 250,
-      errorMessage: 'Height must be a number between 50 and 300 cm'
+      errorMessage: 'Height must be a number between 100 and 250 cm'
     },
     weight: {
       required: false, 
       pattern: /^\d+$/,
       min: 40,
       max: 300,
-      errorMessage: 'Weight must be a number between 20 and 500 kg'
+      errorMessage: 'Weight must be a number between 40 and 300 kg'
     },
     nutritionalGoalOther: {
       required: (data) => data.nutritionalGoal === 'other',
