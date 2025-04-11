@@ -38,7 +38,7 @@ export function MultiSelector({
   return (
     <div className={`flex flex-col w-full gap-2 ${className}`}>
       {/* Selected options pills */}
-      <div className="flex flex-wrap gap-2 mb-2">
+      <div className="flex flex-wrap gap-2">
         {selectedOptions.map(option => (
           <div
             key={option}

@@ -66,7 +66,7 @@ function ProductCard({ product }: { product: Product }) {
   const [expanded, setExpanded] = useState(false);
   
   // Format price to display with 2 decimal places
-  const formattedPrice = product.price.toFixed(2);
+  const formattedPrice = product.price ? product.price.toFixed(2) : "N/A";
   
   // Map allergen codes to human-readable text
   const allergenNames: Record<string, string> = {

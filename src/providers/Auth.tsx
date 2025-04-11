@@ -17,6 +17,7 @@ interface AuthContextType {
     coopPassword?: string;
     profile_data?: Record<string, any>;
   }) => Promise<UserInfo>;
+  updateProfile: (profileData: Record<string, any>) => Promise<void>;
   logout: () => void;
 }
 
@@ -81,6 +82,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProfile = async (profileData: Record<string, any>) => {
+    if (!user) {
+      throw new Error("User must be logged in to update profile");
+    }
+
+    try {
+      await nutriBuddyApi.updateProfileData(profileData);
+      // Update the local user state with the new profile data
+      setUser(currentUser => {
+        if (!currentUser) return null;
+        return {
+          ...currentUser,
+          profile_data: {
+            ...currentUser.profile_data,
+            ...profileData
+          }
+        };
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      throw error;
+    }
+  };
+
   const logout = () => {
     nutriBuddyApi.clearAuthToken();
     setUser(null);
@@ -95,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         signup,
+        updateProfile,
         logout,
       }}
     >

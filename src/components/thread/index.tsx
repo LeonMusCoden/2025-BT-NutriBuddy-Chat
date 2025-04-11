@@ -8,6 +8,7 @@ import { Button } from "../ui/button";
 import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { AssistantMessage, AssistantMessageLoading } from "./messages/ai";
 import { HumanMessage } from "./messages/human";
+import { AccountButton } from "./AccountButton";
 import {
   DO_NOT_RENDER_ID_PREFIX,
   ensureToolCallsHaveResponses,
@@ -307,6 +308,9 @@ export function Thread() {
             </div>
 
             <div className="flex items-center gap-4">
+              <div className="flex items-center">
+                <AccountButton />
+              </div>
               <TooltipIconButton
                 size="lg"
                 className="p-4"
