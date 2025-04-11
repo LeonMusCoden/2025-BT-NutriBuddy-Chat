@@ -53,6 +53,7 @@ interface SignupContextType {
   isStepValid: boolean;
   setFieldTouched: (field: string, touched?: boolean) => void;
   touchAllFields: () => void;
+  setProfileStepValid: (isValid: boolean) => void;
   
   // Submission
   isSubmitting: boolean;
@@ -74,6 +75,8 @@ export const SignupProvider: React.FC<{
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [isStepValid, setIsStepValid] = useState(false);
+  // State for profile step validation (managed by useProfileValidation in ProfileStep)
+  const [profileStepValid, setProfileStepValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form data updater
@@ -129,6 +132,11 @@ export const SignupProvider: React.FC<{
 
   // Validate the current step
   const validateCurrentStep = useCallback((): boolean => {
+    // For profile step, use the profileStepValid state set by ProfileStep
+    if (currentStep === 2) {
+      return profileStepValid;
+    }
+
     const newErrors: ValidationErrors = {};
     
     // Account step validation (email & password)
@@ -209,7 +217,7 @@ export const SignupProvider: React.FC<{
     const valid = Object.keys(newErrors).length === 0;
     setIsStepValid(valid);
     return valid;
-  }, [currentStep, formData]);
+  }, [currentStep, formData, profileStepValid]);
   
   // Handle step transitions
   const goToNextStep = useCallback(() => {
@@ -293,7 +301,8 @@ export const SignupProvider: React.FC<{
       }
       
       // Submit form to API
-      await signup(signupData);
+      // await signup(signupData);
+      console.log(signupData);
       toast.success("Account created successfully");
       navigate("/");
     } catch (error) {
@@ -340,6 +349,13 @@ export const SignupProvider: React.FC<{
   React.useEffect(() => {
     validateCurrentStep();
   }, [formData, validateCurrentStep]);
+
+  // Sync profileStepValid with isStepValid
+  React.useEffect(() => {
+    if (currentStep === 2) {
+      setIsStepValid(profileStepValid);
+    }
+  }, [currentStep, profileStepValid]);
   
   const contextValue: SignupContextType = {
     formData,
@@ -356,6 +372,7 @@ export const SignupProvider: React.FC<{
     isStepValid,
     setFieldTouched,
     touchAllFields,
+    setProfileStepValid,
     isSubmitting,
     handleSubmit
   };

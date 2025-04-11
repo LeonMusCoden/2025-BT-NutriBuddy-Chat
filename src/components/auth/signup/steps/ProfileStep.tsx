@@ -1,57 +1,50 @@
 import { ProfileForm } from "@/components/auth/UserProfile";
 import { ProfileData } from "@/components/auth/UserProfile";
 import { useSignup } from "@/context/SignupContext";
+import { useProfileFormValidation } from "@/hooks/useProfileValidation";
 
 export function ProfileStep() {
   const { 
     formData, 
     updateFormData,
-    errors,
-    touchedFields,
-    setFieldTouched
+    setProfileStepValid
   } = useSignup();
+
+  // Use the useProfileFormValidation hook with validation change callback
+  const { 
+    errors: profileErrors,
+    touchedFields: profileTouchedFields,
+    handleChange: profileHandleChange
+  } = useProfileFormValidation(
+    formData.profile,
+    async () => {}, // No-op for submission since we handle it in SignupContext
+    (isValid) => setProfileStepValid(isValid)
+  );
 
   // Handle ProfileForm onChange
   const handleProfileChange = (newData: ProfileData) => {
-    // Update profile data
+    // Update profile data in SignupContext
     updateFormData({ 
       profile: newData 
     });
     
-    // Mark fields as touched for validation
+    // Mark fields as touched
     Object.keys(newData).forEach(key => {
       if (newData[key as keyof ProfileData] !== formData.profile[key as keyof ProfileData]) {
-        setFieldTouched(`profile.${key}`, true);
+        // Update fields in the hook directly
+        profileHandleChange(key as keyof ProfileData, newData[key as keyof ProfileData]);
       }
     });
   };
 
-  // Convert flat errors to profile-specific format
+  // Convert errors to format expected by ProfileForm
   const getProfileErrors = (): Record<string, string> => {
-    const profileErrors: Record<string, string> = {};
-    
-    Object.entries(errors).forEach(([key, value]) => {
-      if (key.startsWith('profile.')) {
-        const fieldName = key.replace('profile.', '');
-        profileErrors[fieldName] = value;
-      }
-    });
-    
-    return profileErrors;
+    return profileErrors as Record<string, string>;
   };
   
-  // Convert flat touched fields to profile-specific format
+  // Convert touched fields to format expected by ProfileForm
   const getProfileTouchedFields = (): Record<string, boolean> => {
-    const profileTouched: Record<string, boolean> = {};
-    
-    Object.entries(touchedFields).forEach(([key, value]) => {
-      if (key.startsWith('profile.')) {
-        const fieldName = key.replace('profile.', '');
-        profileTouched[fieldName] = value;
-      }
-    });
-    
-    return profileTouched;
+    return profileTouchedFields;
   };
 
   return (

@@ -25,7 +25,11 @@ type TouchedFields = {
   [K in keyof ProfileData]?: boolean;
 };
 
-export function useProfileFormValidation(initialData: ProfileData, onSubmit: (data: ProfileData) => Promise<void>) {
+export function useProfileFormValidation(
+  initialData: ProfileData, 
+  onSubmit: (data: ProfileData) => Promise<void>,
+  onValidationChange?: (isValid: boolean) => void  // Added callback for external validation state tracking
+) {
   const [formData, setFormData] = useState<ProfileData>(initialData);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<TouchedFields>({});
@@ -41,22 +45,22 @@ export function useProfileFormValidation(initialData: ProfileData, onSubmit: (da
     age: {
       required: false,
       pattern: /^\d+$/,
-      min: 12,
-      max: 120,
+      min: 18,
+      max: 100,
       errorMessage: 'Age must be a number between 12 and 120'
     },
     height: {
       required: false,
       pattern: /^\d+$/,
-      min: 50,
-      max: 300,
+      min: 100,
+      max: 250,
       errorMessage: 'Height must be a number between 50 and 300 cm'
     },
     weight: {
       required: false, 
       pattern: /^\d+$/,
-      min: 20,
-      max: 500,
+      min: 40,
+      max: 300,
       errorMessage: 'Weight must be a number between 20 and 500 kg'
     },
     nutritionalGoalOther: {
@@ -193,6 +197,22 @@ export function useProfileFormValidation(initialData: ProfileData, onSubmit: (da
   useEffect(() => {
     setFormData(initialData);
   }, [initialData]);
+
+  useEffect(() => {
+    const isValid = validateForm();
+    
+    // Notify about validation changes
+    if (onValidationChange) {
+      onValidationChange(isValid);
+    }
+  }, [formData, onValidationChange, validateForm]);
+
+  // Notify about validation changes
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(Object.keys(errors).length === 0);
+    }
+  }, [errors, onValidationChange]);
   
   return {
     formData,
