@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ProfileData } from '@/components/auth/UserProfile';
 
 // Define validation rules for each field
@@ -28,12 +28,13 @@ type TouchedFields = {
 export function useProfileFormValidation(
   initialData: ProfileData, 
   onSubmit: (data: ProfileData) => Promise<void>,
-  onValidationChange?: (isValid: boolean) => void  // Added callback for external validation state tracking
+  onValidationChange?: (isValid: boolean) => void
 ) {
   const [formData, setFormData] = useState<ProfileData>(initialData);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<TouchedFields>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const prevFormDataRef = useRef<ProfileData>(initialData);
   
   // Define validation rules
   const validationRules: ValidationRules = {
@@ -146,10 +147,17 @@ export function useProfileFormValidation(
   // Handle field change
   const handleChange = (name: keyof ProfileData, value: any) => {
     // Update form data
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: value
+      };
+      
+      // Store the new form data for future comparison
+      prevFormDataRef.current = newData;
+      
+      return newData;
+    });
     
     // Mark field as touched
     setTouchedFields((prev) => ({
@@ -157,14 +165,21 @@ export function useProfileFormValidation(
       [name]: true
     }));
     
-    // Validate field
+    // Validate the single field
     const error = validateField(name, value);
     
-    // Update errors
-    setErrors((prev) => ({
-      ...prev,
-      [name]: error
-    }));
+    // Update errors and check if all fields are valid now
+    setErrors(prev => {
+      const newErrors = { ...prev, [name]: error };
+      const isValid = !Object.values(newErrors).some(err => err !== undefined);
+      
+      // Notify about validation state change
+      if (onValidationChange) {
+        onValidationChange(isValid);
+      }
+      
+      return newErrors;
+    });
   };
   
   // Handle form submission
@@ -195,24 +210,33 @@ export function useProfileFormValidation(
   
   // Update formData when initialData changes
   useEffect(() => {
-    setFormData(initialData);
+    // Only update if initialData has actually changed
+    if (JSON.stringify(initialData) !== JSON.stringify(prevFormDataRef.current)) {
+      setFormData(initialData);
+      prevFormDataRef.current = initialData;
+      
+      // Re-validate with new data
+      const newErrors: FormErrors = {};
+      let isValid = true;
+      
+      Object.keys(validationRules).forEach((fieldName) => {
+        const name = fieldName as keyof ProfileData;
+        const error = validateField(name, initialData[name]);
+        
+        if (error) {
+          newErrors[name] = error;
+          isValid = false;
+        }
+      });
+      
+      setErrors(newErrors);
+      
+      // Notify about validation state
+      if (onValidationChange) {
+        onValidationChange(isValid);
+      }
+    }
   }, [initialData]);
-
-  useEffect(() => {
-    const isValid = validateForm();
-    
-    // Notify about validation changes
-    if (onValidationChange) {
-      onValidationChange(isValid);
-    }
-  }, [formData, onValidationChange, validateForm]);
-
-  // Notify about validation changes
-  useEffect(() => {
-    if (onValidationChange) {
-      onValidationChange(Object.keys(errors).length === 0);
-    }
-  }, [errors, onValidationChange]);
   
   return {
     formData,
@@ -220,7 +244,7 @@ export function useProfileFormValidation(
     touchedFields,
     isSubmitting,
     handleChange,
-    setFormData, // Allow direct state updates when needed
+    setFormData,
     validateForm,
     validateField,
     handleSubmit,
