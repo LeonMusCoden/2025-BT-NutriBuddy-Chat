@@ -1,32 +1,28 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 
 type FormControlsProps = {
-  currentStep: number;
-  totalSteps: number;
   isLoading: boolean;
-  canProceed: boolean;
-  prevStep: () => void;
-  nextStep: () => void;
-  skipStep: () => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
+  isStepValid: boolean;
+  isLastStep: boolean;
+  isFirstStep: boolean;
+  onPrevStep: () => void;
+  onNextStep: () => void;
+  onSkip: () => void;
+  onSubmit: () => void;
 };
 
 export function FormControls({
-  currentStep,
-  totalSteps,
   isLoading,
-  canProceed,
-  prevStep,
-  nextStep,
-  skipStep,
-  handleSubmit
+  isStepValid,
+  isLastStep,
+  isFirstStep,
+  onPrevStep,
+  onNextStep,
+  onSkip,
+  onSubmit
 }: FormControlsProps) {
-  const isFirstStep = currentStep === 0;
-  const isLastStep = currentStep === totalSteps - 1;
-
   const getButtonText = () => {
-    if (isFirstStep) return "Continue";
     if (isLastStep) return isLoading ? "Creating account..." : "Create account";
     return "Continue";
   };
@@ -42,8 +38,9 @@ export function FormControls({
           <Button 
             type="button" 
             variant="outline" 
-            onClick={prevStep}
+            onClick={onPrevStep}
             className="flex-1"
+            disabled={isLoading}
           >
             <ArrowLeft className="size-4 mr-2" />
             Back
@@ -51,21 +48,18 @@ export function FormControls({
         )}
         
         <Button 
-          type="submit" 
+          type="button" 
           size="lg" 
-          disabled={isLoading || !canProceed}
+          disabled={isLoading || !isStepValid}
           className={isFirstStep ? "w-full" : "flex-1"}
-          onClick={(e) => {
-            e.preventDefault();
-            if (isLastStep) {
-              void handleSubmit(e);
-            } else {
-              nextStep();
-            }
-          }}
+          onClick={isLastStep ? onSubmit : onNextStep}
         >
           {getButtonText()}
-          {!isLoading && <ArrowRight className="size-5 ml-2" />}
+          {isLoading ? (
+            <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowRight className="size-5 ml-2" />
+          )}
         </Button>
       </div>
       
@@ -73,8 +67,9 @@ export function FormControls({
         <Button 
           type="button" 
           variant="ghost" 
-          onClick={skipStep}
+          onClick={onSkip}
           className="text-muted-foreground"
+          disabled={isLoading}
         >
           {getSkipButtonText()}
         </Button>

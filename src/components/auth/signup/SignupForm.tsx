@@ -1,14 +1,16 @@
+// src/components/auth/signup/SignupForm.tsx
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/providers/Auth";
 import { toast } from "sonner";
-import { STEPS, ValidationStatus } from "./types";
+import { STEPS, SignupFormData } from "./types";
 import { SignupProgress } from "./components/SignupProgress";
 import { FormControls } from "./components/FormControls";
-import { useProfileFormValidation } from "@/hooks/useProfileValidation";
-import { ProfileForm, defaultProfile, ProfileData } from "@/components/auth/UserProfile";
 import { AccountStep } from "./steps/AccountStep";
 import { LoyaltyCardsStep } from "./steps/LoyaltyCardsStep";
+import { ProfileStep } from "./steps/ProfileStep";
+import { defaultProfile } from "../UserProfile";
 
 type SignupFormProps = {
   onStepChange: (step: number) => void;
@@ -20,43 +22,38 @@ export function SignupForm({ onStepChange }: SignupFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
 
-  // Basic account data
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  
-  // Loyalty card data
-  const [connectMigros, setConnectMigros] = useState(false);
-  const [connectCoop, setConnectCoop] = useState(false);
-  const [migrosEmail, setMigrosEmail] = useState("");
-  const [migrosPassword, setMigrosPassword] = useState("");
-  const [coopEmail, setCoopEmail] = useState("");
-  const [coopPassword, setCoopPassword] = useState("");
-  const [migrosValidationStatus, setMigrosValidationStatus] = useState<ValidationStatus>('idle');
-  const [coopValidationStatus, setCoopValidationStatus] = useState<ValidationStatus>('idle');
-  
-  // We'll use our validation hook for the profile data part
-  const { 
-    formData: profileData, 
-    errors, 
-    touchedFields,
-    handleChange,
-    validateForm,
-  } = useProfileFormValidation(defaultProfile, async () => {
-    // This will be used just for validation, not actual submission
-    // The actual submission happens in handleSubmit
+  // Step validation state
+  const [isStepValid, setIsStepValid] = useState(false);
+
+  // Initialize form data
+  const [formData, setFormData] = useState<SignupFormData>({
+    email: "",
+    password: "",
+    connectedLoyaltyCard: null,
+    migros: {
+      email: "",
+      password: "",
+      validationStatus: 'idle',
+      isConnected: false
+    },
+    coop: {
+      email: "",
+      password: "",
+      validationStatus: 'idle',
+      isConnected: false
+    },
+    profile: defaultProfile
   });
-  
-  // Create a wrapper for ProfileForm's onChange to use our validation
-  const handleProfileChange = (newData: ProfileData) => {
-    // Find which field changed
-    Object.keys(newData).forEach((key) => {
-      const k = key as keyof ProfileData;
-      if (profileData[k] !== newData[k]) {
-        handleChange(k, newData[k]);
-      }
-    });
+
+  // Helper to update form data
+  const updateFormData = (updates: Partial<SignupFormData>) => {
+    setFormData(prev => ({
+      ...prev,
+      ...updates
+    }));
   };
 
+  // Step navigation
   const nextStep = () => {
     if (currentStep < STEPS.length - 1) {
       const newStep = currentStep + 1;
@@ -74,70 +71,69 @@ export function SignupForm({ onStepChange }: SignupFormProps) {
   };
 
   const skipStep = () => {
+    // Set default values for the current step being skipped
+    if (currentStep === 1) {
+      updateFormData({
+        connectedLoyaltyCard: null,
+        migros: {
+          email: "",
+          password: "",
+          validationStatus: 'idle',
+          isConnected: false
+        },
+        coop: {
+          email: "",
+          password: "",
+          validationStatus: 'idle',
+          isConnected: false
+        }
+      });
+    } else if (currentStep === 2) {
+      console.log("DEBUG");
+      updateFormData({
+        profile: { ...defaultProfile }
+      });
+    }
+
     if (currentStep === STEPS.length - 1) {
-      void handleSubmit();
+      handleSubmit();
     } else {
+      setIsStepValid(true);
       nextStep();
     }
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-    
-    if (currentStep < STEPS.length - 1) {
-      // Validate current step
-      if (currentStep === 0) {
-        // Validate email/password
-        if (!email || !password) {
-          toast.error("Please fill in all required fields");
-          return;
-        }
-        if (password.length < 8) {
-          toast.error("Password must be at least 8 characters");
-          return;
-        }
-      }
-      
-      nextStep();
-      return;
-    }
-    
-    // Validate final step if we're submitting the form
-    if (currentStep === 2) {
-      const isFormValid = validateForm();
-      
-      if (!isFormValid) {
-        toast.error("Please correct the errors in the form");
-        return;
-      }
-    }
-    
+  // Form submission
+  const handleSubmit = async () => {
     setIsLoading(true);
-    
+
     try {
-      // Determine connected loyalty card
-      let connectedLoyaltyCard: 'migros' | 'coop' | 'both' | null = null;
-      if (connectMigros && connectCoop) {
-        connectedLoyaltyCard = 'both';
-      } else if (connectMigros) {
-        connectedLoyaltyCard = 'migros';
-      } else if (connectCoop) {
-        connectedLoyaltyCard = 'coop';
+      // Prepare signup data
+      const signupData = {
+        email: formData.email,
+        password: formData.password,
+        connectedLoyaltyCard: formData.connectedLoyaltyCard,
+        profile_data: formData.profile
+      };
+
+      // Add retailer credentials if connected
+      if (formData.migros.isConnected) {
+        Object.assign(signupData, {
+          migrosEmail: formData.migros.email,
+          migrosPassword: formData.migros.password
+        });
       }
-      
-      await signup({
-        email,
-        password,
-        connectedLoyaltyCard,
-        migrosEmail: connectMigros ? migrosEmail : undefined,
-        migrosPassword: connectMigros ? migrosPassword : undefined,
-        coopEmail: connectCoop ? coopEmail : undefined,
-        coopPassword: connectCoop ? coopPassword : undefined,
-        profile_data: profileData
-      });
-      
+
+      if (formData.coop.isConnected) {
+        Object.assign(signupData, {
+          coopEmail: formData.coop.email,
+          coopPassword: formData.coop.password
+        });
+      }
+
+      // await signup(signupData);
+      console.log(signupData);
+
       toast.success("Account created successfully");
       navigate("/");
     } catch (error) {
@@ -152,112 +148,63 @@ export function SignupForm({ onStepChange }: SignupFormProps) {
     }
   };
 
-  // Check if we can proceed to the next step
-  const canProceed = () => {
-    if (currentStep === 0) {
-      return !!email && !!password;
-    }
-    // For other steps, we allow proceeding even with errors
-    return true;
+  // Handle step validation change
+  const handleValidationChange = (isValid: boolean) => {
+    setIsStepValid(isValid);
   };
 
-  // Handle keyboard events
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // If Enter is pressed, prevent default submission and handle step navigation
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      
-      if (currentStep === STEPS.length - 1) {
-        void handleSubmit();
-      } else if (canProceed()) {
-        nextStep();
-      }
-    }
-  };
+  const isFirstStep = currentStep === 0;
+  const isLastStep = currentStep === STEPS.length - 1;
 
   return (
-    <form 
-      onSubmit={(e) => { 
-        e.preventDefault(); 
-        handleSubmit(e); 
-      }} 
-      onKeyDown={handleKeyDown}
+    <form
+      onSubmit={(e) => e.preventDefault()}
       className="flex flex-col gap-6"
     >
       {/* Step 1: Account Information */}
       {currentStep === 0 && (
-        <AccountStep 
-          formData={{ ...profileData, email, password }}
-          handleInputChange={(e) => {
-            const { name, value } = e.target;
-            if (name === 'email') setEmail(value);
-            if (name === 'password') setPassword(value);
-          }}
+        <AccountStep
+          email={formData.email}
+          password={formData.password}
+          updateData={(updates) => updateFormData(updates)}
+          onValidationChange={handleValidationChange}
         />
       )}
-      
+
       {/* Step 2: Loyalty Cards */}
       {currentStep === 1 && (
-        <LoyaltyCardsStep 
-          formData={{ 
-            ...profileData,
-            migrosEmail,
-            migrosPassword,
-            coopEmail,
-            coopPassword,
-            connectedLoyaltyCard: connectMigros && connectCoop ? 'both' : 
-                                  connectMigros ? 'migros' : 
-                                  connectCoop ? 'coop' : null
-          }}
-          updateFormData={(updates) => {
-            if ('migrosEmail' in updates) setMigrosEmail(updates.migrosEmail || '');
-            if ('migrosPassword' in updates) setMigrosPassword(updates.migrosPassword || '');
-            if ('coopEmail' in updates) setCoopEmail(updates.coopEmail || '');
-            if ('coopPassword' in updates) setCoopPassword(updates.coopPassword || '');
-          }}
-          migrosValidationStatus={migrosValidationStatus}
-          coopValidationStatus={coopValidationStatus}
-          setMigrosValidationStatus={setMigrosValidationStatus}
-          setCoopValidationStatus={setCoopValidationStatus}
-          connectMigros={connectMigros}
-          connectCoop={connectCoop}
-          setConnectMigros={setConnectMigros}
-          setConnectCoop={setConnectCoop}
+        <LoyaltyCardsStep
+          migros={formData.migros}
+          coop={formData.coop}
+          updateData={(updates) => updateFormData(updates)}
+          onValidationChange={handleValidationChange}
         />
       )}
-      
-      {/* Step 3: User Information - Use ProfileForm directly instead of UserInfoStep */}
+
+      {/* Step 3: User Profile */}
       {currentStep === 2 && (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground mb-2">
-            This information helps us provide better nutrition advice based on your profile.
-          </p>
-          
-          <ProfileForm 
-            profile={profileData}
-            onChange={handleProfileChange}
-            errors={errors}
-            touchedFields={touchedFields}
-            defaultAccordionValue="basic-info"
-          />
-        </div>
-      )}
-      
-      <div className="flex flex-col gap-4 mt-2">
-        <SignupProgress 
-          steps={STEPS.length} 
-          currentStep={currentStep} 
+        <ProfileStep
+          profile={formData.profile}
+          updateData={(profileUpdates) => updateFormData({ profile: { ...formData.profile, ...profileUpdates } })}
+          onValidationChange={handleValidationChange}
         />
-        
-        <FormControls 
+      )}
+
+      <div className="flex flex-col gap-4 mt-2">
+        <SignupProgress
+          steps={STEPS.length}
           currentStep={currentStep}
-          totalSteps={STEPS.length}
+        />
+
+        <FormControls
           isLoading={isLoading}
-          canProceed={canProceed()}
-          prevStep={prevStep}
-          nextStep={nextStep}
-          skipStep={skipStep}
-          handleSubmit={handleSubmit}
+          isStepValid={isStepValid}
+          isFirstStep={isFirstStep}
+          isLastStep={isLastStep}
+          onPrevStep={prevStep}
+          onNextStep={nextStep}
+          onSkip={skipStep}
+          onSubmit={handleSubmit}
         />
       </div>
     </form>

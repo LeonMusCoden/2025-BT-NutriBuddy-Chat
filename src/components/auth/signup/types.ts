@@ -1,43 +1,27 @@
-// Shared types for signup components
+import { ProfileData } from "../UserProfile";
 
-export type FormData = {
-  // Account info
+export type RetailerCredentials = {
+  email: string;
+  password: string;
+  validationStatus: 'idle' | 'validating' | 'valid' | 'invalid';
+  isConnected: boolean;
+};
+
+export type ConnectedLoyaltyCardState = 'migros' | 'coop' | 'both' | null;
+
+export type SignupFormData = {
+  // Basic account data
   email: string;
   password: string;
   
-  // Loyalty cards
-  connectedLoyaltyCard: 'migros' | 'coop' | 'both' | null;
-  migrosEmail: string;
-  migrosPassword: string;
-  coopEmail: string;
-  coopPassword: string;
+  // Loyalty card data
+  connectedLoyaltyCard: ConnectedLoyaltyCardState;
+  migros: RetailerCredentials;
+  coop: RetailerCredentials;
   
-  // User info
-  name: string;
-  age: string;
-  height: string;
-  weight: string;
-  gender: 'female' | 'male' | 'other' | '';
-  dietaryType: 'no-restrictions' | 'vegetarian' | 'vegan' | '';
-  
-  // Arrays for multi-select options
-  allergens: string[];
-  favoriteCuisines: string[];
-  dislikedCuisines: string[];
-  
-  // Health info
-  nutritionalGoal: 'lose-weight' | 'stay-healthy' | 'gain-muscle' | 'other' | '';
-  nutritionalGoalOther: string;
-  sportsFrequency: '4+' | '2-3' | 'once' | 'less' | '';
-  
-  // Medical conditions (multi-select)
-  medicalConditions: string[];
-  otherMedicalCondition: string;
+  // User profile data
+  profile: ProfileData;
 };
-
-export type ValidationStatus = 'idle' | 'validating' | 'valid' | 'invalid';
-
-export type RetailerType = 'migros' | 'coop';
 
 export type StepConfig = {
   title: string;

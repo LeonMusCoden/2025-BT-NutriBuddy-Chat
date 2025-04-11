@@ -3,31 +3,29 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Check, XCircle, Loader2 } from "lucide-react";
-import { RetailerType, ValidationStatus } from "../types";
+import { RetailerCredentials } from "../types";
 
-type RetailerCredentialsProps = {
-  retailer: RetailerType;
-  email: string;
-  password: string;
-  validationStatus: ValidationStatus;
-  onEmailChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
+type RetailerCredentialsFormProps = {
+  retailer: 'migros' | 'coop';
+  credentials: RetailerCredentials;
+  updateCredentials: (updates: Partial<RetailerCredentials>) => void;
   onValidate: () => Promise<void>;
+  error?: string;
 };
 
-export function RetailerCredentials({
+export function RetailerCredentialsForm({
   retailer,
-  email,
-  password,
-  validationStatus,
-  onEmailChange,
-  onPasswordChange,
-  onValidate
-}: RetailerCredentialsProps) {
+  credentials,
+  updateCredentials,
+  onValidate,
+  error
+}: RetailerCredentialsFormProps) {
   const retailerName = retailer.charAt(0).toUpperCase() + retailer.slice(1);
   const emailId = `${retailer}Email`;
   const passwordId = `${retailer}Password`;
   
+  const { email, password, validationStatus } = credentials;
+
   return (
     <div className="mt-4 p-4 bg-background rounded-lg border">
       <div className="flex flex-col gap-4">
@@ -38,7 +36,7 @@ export function RetailerCredentials({
             name={emailId}
             type="email"
             value={email}
-            onChange={(e) => onEmailChange(e.target.value)}
+            onChange={(e) => updateCredentials({ email: e.target.value })}
             className="bg-background"
           />
         </div>
@@ -49,10 +47,14 @@ export function RetailerCredentials({
             id={passwordId}
             name={passwordId}
             value={password}
-            onChange={(e) => onPasswordChange(e.target.value)}
+            onChange={(e) => updateCredentials({ password: e.target.value })}
             className="bg-background"
           />
         </div>
+        
+        {error && (
+          <div className="text-destructive text-sm">{error}</div>
+        )}
         
         <div className="flex items-center justify-between">
           <Button 
@@ -66,9 +68,7 @@ export function RetailerCredentials({
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Validating...
               </>
-            ) : (
-              'Validate Credentials'
-            )}
+            ) : 'Validate Credentials'}
           </Button>
           
           {validationStatus === 'valid' && (
