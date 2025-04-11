@@ -1,0 +1,209 @@
+import { useState, useEffect } from 'react';
+import { ProfileData } from '@/components/auth/UserProfile';
+
+// Define validation rules for each field
+type ValidationRules = {
+  [K in keyof ProfileData]?: {
+    required?: boolean | ((data: ProfileData) => boolean);
+    minLength?: number;
+    maxLength?: number;
+    pattern?: RegExp;
+    min?: number;
+    max?: number;
+    custom?: (value: any, data: ProfileData) => boolean;
+    errorMessage?: string;
+  };
+};
+
+// Define error messages
+type FormErrors = {
+  [K in keyof ProfileData]?: string;
+};
+
+// Define which fields have been touched
+type TouchedFields = {
+  [K in keyof ProfileData]?: boolean;
+};
+
+export function useProfileFormValidation(initialData: ProfileData, onSubmit: (data: ProfileData) => Promise<void>) {
+  const [formData, setFormData] = useState<ProfileData>(initialData);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touchedFields, setTouchedFields] = useState<TouchedFields>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Define validation rules
+  const validationRules: ValidationRules = {
+    name: {
+      required: false,
+      minLength: 2,
+      errorMessage: 'Name must be at least 2 characters'
+    },
+    age: {
+      required: false,
+      pattern: /^\d+$/,
+      min: 12,
+      max: 120,
+      errorMessage: 'Age must be a number between 12 and 120'
+    },
+    height: {
+      required: false,
+      pattern: /^\d+$/,
+      min: 50,
+      max: 300,
+      errorMessage: 'Height must be a number between 50 and 300 cm'
+    },
+    weight: {
+      required: false, 
+      pattern: /^\d+$/,
+      min: 20,
+      max: 500,
+      errorMessage: 'Weight must be a number between 20 and 500 kg'
+    },
+    nutritionalGoalOther: {
+      required: (data) => data.nutritionalGoal === 'other',
+      minLength: 3,
+      errorMessage: 'Please specify your nutritional goal'
+    }
+  };
+  
+  // Validate a single field
+  const validateField = (name: keyof ProfileData, value: any): string | undefined => {
+    const rules = validationRules[name];
+    if (!rules) return undefined;
+    
+    // Check if required
+    if (rules.required === true && (!value || (typeof value === 'string' && value.trim() === ''))) {
+      return rules.errorMessage || `${name} is required`;
+    }
+    
+    // Check if required conditionally
+    if (typeof rules.required === 'function' && rules.required(formData) && (!value || (typeof value === 'string' && value.trim() === ''))) {
+      return rules.errorMessage || `${name} is required`;
+    }
+    
+    // Skip other validations if value is empty and not required
+    if (!value || (typeof value === 'string' && value.trim() === '')) {
+      return undefined;
+    }
+    
+    // Check min length
+    if (rules.minLength && typeof value === 'string' && value.length < rules.minLength) {
+      return rules.errorMessage || `${name} must be at least ${rules.minLength} characters`;
+    }
+    
+    // Check max length
+    if (rules.maxLength && typeof value === 'string' && value.length > rules.maxLength) {
+      return rules.errorMessage || `${name} must be less than ${rules.maxLength} characters`;
+    }
+    
+    // Check pattern
+    if (rules.pattern && typeof value === 'string' && !rules.pattern.test(value)) {
+      return rules.errorMessage || `${name} has an invalid format`;
+    }
+    
+    // Check min value for numeric fields
+    if (rules.min !== undefined && !isNaN(Number(value)) && Number(value) < rules.min) {
+      return rules.errorMessage || `${name} must be at least ${rules.min}`;
+    }
+    
+    // Check max value for numeric fields
+    if (rules.max !== undefined && !isNaN(Number(value)) && Number(value) > rules.max) {
+      return rules.errorMessage || `${name} must be less than ${rules.max}`;
+    }
+    
+    // Custom validation
+    if (rules.custom && !rules.custom(value, formData)) {
+      return rules.errorMessage || `${name} is invalid`;
+    }
+    
+    return undefined;
+  };
+  
+  // Validate all fields
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    let isValid = true;
+    
+    // Check each field with validation rules
+    Object.keys(validationRules).forEach((fieldName) => {
+      const name = fieldName as keyof ProfileData;
+      const error = validateField(name, formData[name]);
+      
+      if (error) {
+        newErrors[name] = error;
+        isValid = false;
+      }
+    });
+    
+    setErrors(newErrors);
+    return isValid;
+  };
+  
+  // Handle field change
+  const handleChange = (name: keyof ProfileData, value: any) => {
+    // Update form data
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Mark field as touched
+    setTouchedFields((prev) => ({
+      ...prev,
+      [name]: true
+    }));
+    
+    // Validate field
+    const error = validateField(name, value);
+    
+    // Update errors
+    setErrors((prev) => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+  
+  // Handle form submission
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    // Mark all fields as touched
+    const allTouched: TouchedFields = {};
+    Object.keys(validationRules).forEach((field) => {
+      allTouched[field as keyof ProfileData] = true;
+    });
+    setTouchedFields(allTouched);
+    
+    // Validate form
+    const isValid = validateForm();
+    
+    if (isValid) {
+      setIsSubmitting(true);
+      try {
+        await onSubmit(formData);
+      } catch (error) {
+        console.error('Form submission error:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+  
+  // Update formData when initialData changes
+  useEffect(() => {
+    setFormData(initialData);
+  }, [initialData]);
+  
+  return {
+    formData,
+    errors,
+    touchedFields,
+    isSubmitting,
+    handleChange,
+    setFormData, // Allow direct state updates when needed
+    validateForm,
+    validateField,
+    handleSubmit,
+    isValid: Object.keys(errors).length === 0
+  };
+}

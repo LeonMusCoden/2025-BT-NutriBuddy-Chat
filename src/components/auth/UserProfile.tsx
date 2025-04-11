@@ -52,13 +52,17 @@ interface ProfileFormProps {
   isLoading?: boolean;
   defaultAccordionValue?: string;
   onChange: (profile: ProfileData) => void;
+  errors?: Record<string, string>;
+  touchedFields?: Record<string, boolean>;
 }
 
 export function ProfileForm({ 
   profile, 
   isLoading = false, 
   defaultAccordionValue = "basic-info",
-  onChange
+  onChange,
+  errors = {},
+  touchedFields = {}
 }: ProfileFormProps) {
   const [showOtherNutritionalGoal, setShowOtherNutritionalGoal] = useState(
     profile.nutritionalGoal === 'other'
@@ -88,6 +92,16 @@ export function ProfileForm({
     updateProfileData({ nutritionalGoal: value as any });
   };
 
+  // Helper to display error messages
+  const getErrorMessage = (field: keyof ProfileData) => {
+    if (touchedFields[field] && errors[field]) {
+      return (
+        <p className="text-destructive text-sm mt-1">{errors[field]}</p>
+      );
+    }
+    return null;
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -106,29 +120,35 @@ export function ProfileForm({
           </AccordionTrigger>
           <AccordionContent className="space-y-4 px-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name" className={errors.name && touchedFields.name ? "text-destructive" : ""}>
+                Full Name
+              </Label>
               <Input
                 id="name"
                 name="name"
                 value={profile.name}
                 onChange={handleInputChange}
-                className="bg-background"
+                className={`bg-background ${errors.name && touchedFields.name ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
                 placeholder="Enter your name"
               />
+              {getErrorMessage('name')}
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="age">Age</Label>
+                <Label htmlFor="age" className={errors.age && touchedFields.age ? "text-destructive" : ""}>
+                  Age
+                </Label>
                 <Input
                   id="age"
                   name="age"
                   type="number"
                   value={profile.age}
                   onChange={handleInputChange}
-                  className="bg-background"
+                  className={`bg-background ${errors.age && touchedFields.age ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
                   placeholder="Years"
                 />
+                {getErrorMessage('age')}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -150,29 +170,35 @@ export function ProfileForm({
 
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="height">Height</Label>
+                <Label htmlFor="height" className={errors.height && touchedFields.height ? "text-destructive" : ""}>
+                  Height
+                </Label>
                 <Input
                   id="height"
                   name="height"
                   type="number"
                   value={profile.height}
                   onChange={handleInputChange}
-                  className="bg-background"
+                  className={`bg-background ${errors.height && touchedFields.height ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
                   placeholder="Centimeters"
                 />
+                {getErrorMessage('height')}
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="weight">Weight</Label>
+                <Label htmlFor="weight" className={errors.weight && touchedFields.weight ? "text-destructive" : ""}>
+                  Weight
+                </Label>
                 <Input
                   id="weight"
                   name="weight"
                   type="number"
                   value={profile.weight}
                   onChange={handleInputChange}
-                  className="bg-background"
+                  className={`bg-background ${errors.weight && touchedFields.weight ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
                   placeholder="Kilograms"
                 />
+                {getErrorMessage('weight')}
               </div>
             </div>
           </AccordionContent>
@@ -186,8 +212,8 @@ export function ProfileForm({
           <AccordionContent className="space-y-4 px-2">
             <div className="flex flex-col gap-2">
               <Label>Dietary Type</Label>
-              <RadioGroup
-                value={profile.dietaryType}
+              <RadioGroup 
+                value={profile.dietaryType} 
                 onValueChange={(value) => updateProfileData({ dietaryType: value as any })}
                 className="flex flex-col space-y-1"
               >
@@ -205,7 +231,7 @@ export function ProfileForm({
                 </div>
               </RadioGroup>
             </div>
-
+            
             <div className="flex flex-col gap-2 mt-4">
               <Label>Allergens & Intolerances</Label>
               <MultiSelector
@@ -231,7 +257,7 @@ export function ProfileForm({
                 onChange={(selected) => updateProfileData({ favoriteCuisines: selected })}
               />
             </div>
-
+            
             <div className="flex flex-col gap-2 mt-4">
               <Label>Cuisines You Dislike</Label>
               <MultiSelector
@@ -251,8 +277,8 @@ export function ProfileForm({
           <AccordionContent className="space-y-4 px-2">
             <div className="flex flex-col gap-2">
               <Label>Nutritional Goals</Label>
-              <RadioGroup
-                value={profile.nutritionalGoal}
+              <RadioGroup 
+                value={profile.nutritionalGoal} 
                 onValueChange={handleNutritionalGoalChange}
                 className="flex flex-col space-y-1"
               >
@@ -273,16 +299,19 @@ export function ProfileForm({
                   <Label htmlFor="other-goal" className="font-normal cursor-pointer">Other</Label>
                 </div>
               </RadioGroup>
-
+              
               {showOtherNutritionalGoal && (
-                <Input
-                  id="nutritionalGoalOther"
-                  name="nutritionalGoalOther"
-                  value={profile.nutritionalGoalOther}
-                  onChange={handleInputChange}
-                  className="bg-background mt-2"
-                  placeholder="Please specify your goal"
-                />
+                <div className="mt-2">
+                  <Input
+                    id="nutritionalGoalOther"
+                    name="nutritionalGoalOther"
+                    value={profile.nutritionalGoalOther}
+                    onChange={handleInputChange}
+                    className={`bg-background ${errors.nutritionalGoalOther && touchedFields.nutritionalGoalOther ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
+                    placeholder="Please specify your goal"
+                  />
+                  {getErrorMessage('nutritionalGoalOther')}
+                </div>
               )}
             </div>
 
@@ -311,17 +340,17 @@ export function ProfileForm({
             Medical Conditions
           </AccordionTrigger>
           <AccordionContent className="space-y-4 px-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="">
               Are you affected by any of the following conditions?
             </p>
-
+            
             <div className="flex flex-col gap-2">
               <MultiSelector
                 options={MEDICAL_CONDITIONS}
                 selectedOptions={profile.medicalConditions}
                 onChange={(selected) => updateProfileData({ medicalConditions: selected })}
               />
-
+              
               <div className="flex flex-col gap-2 mt-2">
                 <Label htmlFor="otherMedicalCondition">Other medical conditions</Label>
                 <Input
