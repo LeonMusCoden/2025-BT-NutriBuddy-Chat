@@ -31,7 +31,7 @@ export function ToolCalls({
               <h3 className="font-medium text-gray-900">
                 {tc.name}
                 {tc.id && (
-                  <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
+                  <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded max-w-[100px] sm:max-w-[150px] md:max-w-[200px] truncate inline-block align-middle">
                     {tc.id}
                   </code>
                 )}
@@ -45,9 +45,9 @@ export function ToolCalls({
                       <td className="px-4 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                         {key}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-500">
+                      <td className="px-4 py-2 text-sm text-gray-500 break-all">
                         {isComplexValue(value) ? (
-                          <code className="bg-gray-50 rounded px-2 py-1 font-mono text-sm break-all">
+                          <code className="bg-gray-50 rounded px-2 py-1 font-mono text-sm">
                             {JSON.stringify(value, null, 2)}
                           </code>
                         ) : (
@@ -100,7 +100,7 @@ function ToolCallHeader({ title, tool_call_id, show_call_id }: { title: string, 
         <h3 className="font-medium text-gray-900">
           {title}
           {(tool_call_id && show_call_id) && (
-            <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded">
+            <code className="ml-2 text-sm bg-gray-100 px-2 py-1 rounded max-w-[100px] sm:max-w-[150px] md:max-w-[200px] truncate inline-block align-middle">
               {tool_call_id}
             </code>
           )}

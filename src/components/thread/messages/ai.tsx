@@ -76,13 +76,13 @@ export function AssistantMessage({
 }) {
   const content = message?.content ?? [];
   const contentString = getContentString(content);
-  const [hideToolCalls] = useQueryState(
-    "hideToolCalls",
-    parseAsBoolean.withDefault(true),
-  );
-  const [hideToolResults] = useQueryState(
-    "hideToolResults",
+  const [showToolCalls] = useQueryState(
+    "showToolCalls",
     parseAsBoolean.withDefault(false),
+  );
+  const [showToolResults] = useQueryState(
+    "showToolResults",
+    parseAsBoolean.withDefault(true),
   );
 
   const thread = useStreamContext();
@@ -112,71 +112,82 @@ export function AssistantMessage({
   const hasAnthropicToolCalls = !!anthropicStreamedToolCalls?.length;
   const isToolResult = message?.type === "tool";
 
-  if (isToolResult && hideToolResults) {
+  if (isToolResult && !showToolResults) {
+    return null;
+  }
+
+  // Check if there's any content to display
+  const hasDisplayableContent = 
+    contentString.length > 0 ||
+    (showToolCalls && (hasToolCalls || hasAnthropicToolCalls)) ||
+    (message && thread.values.ui?.some(ui => ui.metadata?.message_id === message.id)) ||
+    (isAgentInboxInterruptSchema(threadInterrupt?.value) && (isLastMessage || hasNoAIOrToolMessages)) ||
+    (threadInterrupt?.value && !isAgentInboxInterruptSchema(threadInterrupt.value) && isLastMessage);
+
+  if (isToolResult) {
+    return <ToolResult message={message} show_call_id={showToolCalls} />;
+  }
+
+  // Only render the wrapper if there's content to display
+  if (!hasDisplayableContent) {
     return null;
   }
 
   return (
-    <>
-      {isToolResult ? (
-        <ToolResult message={message} show_call_id={!hideToolCalls}/>
-      ) : (
-        <div className="flex items-start mr-auto gap-2 group">
-          <div className="flex flex-col gap-2">
-            {contentString.length > 0 && (
-              <div className="py-1">
-                <MarkdownText>{contentString}</MarkdownText>
-              </div>
-            )}
-
-            {!hideToolCalls && (
-              <>
-                {(hasToolCalls && toolCallsHaveContents && (
-                  <ToolCalls toolCalls={message.tool_calls} />
-                )) ||
-                  (hasAnthropicToolCalls && (
-                    <ToolCalls toolCalls={anthropicStreamedToolCalls} />
-                  )) ||
-                  (hasToolCalls && <ToolCalls toolCalls={message.tool_calls} />)}
-              </>
-            )}
-
-            {message && <CustomComponent message={message} thread={thread} />}
-            {isAgentInboxInterruptSchema(threadInterrupt?.value) &&
-              (isLastMessage || hasNoAIOrToolMessages) && (
-                <ThreadView interrupt={threadInterrupt.value} />
-              )}
-            {threadInterrupt?.value &&
-              !isAgentInboxInterruptSchema(threadInterrupt.value) &&
-              isLastMessage ? (
-              <GenericInterruptView interrupt={threadInterrupt.value} />
-            ) : null}
-
-            {(message?.content || !hideToolCalls) && (
-              <div
-                className={cn(
-                  "flex gap-2 items-center mr-auto transition-opacity",
-                  "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-                )}
-              >
-                <BranchSwitcher
-                  branch={meta?.branch}
-                  branchOptions={meta?.branchOptions}
-                  onSelect={(branch) => thread.setBranch(branch)}
-                  isLoading={isLoading}
-                />
-                <CommandBar
-                  content={contentString}
-                  isLoading={isLoading}
-                  isAiMessage={true}
-                  handleRegenerate={() => handleRegenerate(parentCheckpoint)}
-                />
-              </div>
-            )}
+    <div className="flex items-start mr-auto gap-2 group">
+      <div className="flex flex-col gap-2">
+        {contentString.length > 0 && (
+          <div className="py-1">
+            <MarkdownText>{contentString}</MarkdownText>
           </div>
-        </div>
-      )}
-    </>
+        )}
+
+        {showToolCalls && (
+          <>
+            {(hasToolCalls && toolCallsHaveContents && (
+              <ToolCalls toolCalls={message.tool_calls} />
+            )) ||
+              (hasAnthropicToolCalls && (
+                <ToolCalls toolCalls={anthropicStreamedToolCalls} />
+              )) ||
+              (hasToolCalls && <ToolCalls toolCalls={message.tool_calls} />)}
+          </>
+        )}
+
+        {message && <CustomComponent message={message} thread={thread} />}
+        {isAgentInboxInterruptSchema(threadInterrupt?.value) &&
+          (isLastMessage || hasNoAIOrToolMessages) && (
+            <ThreadView interrupt={threadInterrupt.value} />
+          )}
+        {threadInterrupt?.value &&
+          !isAgentInboxInterruptSchema(threadInterrupt.value) &&
+          isLastMessage ? (
+          <GenericInterruptView interrupt={threadInterrupt.value} />
+        ) : null}
+
+        {(message?.content || showToolCalls) && (
+          <div
+            className={cn(
+              "flex gap-2 items-center mr-auto transition-opacity",
+              "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+            )}
+          >
+            <BranchSwitcher
+              branch={meta?.branch}
+              branchOptions={meta?.branchOptions}
+              onSelect={(branch) => thread.setBranch(branch)}
+              isLoading={isLoading}
+            />
+            <CommandBar
+              content={contentString}
+              isLoading={isLoading}
+              isAiMessage={true}
+              handleRegenerate={() => handleRegenerate(parentCheckpoint)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

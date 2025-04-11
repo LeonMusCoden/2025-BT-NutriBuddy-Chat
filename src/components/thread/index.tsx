@@ -101,13 +101,13 @@ export function Thread() {
     "chatHistoryOpen",
     parseAsBoolean.withDefault(false),
   );
-  const [hideToolCalls, setHideToolCalls] = useQueryState(
-    "hideToolCalls",
+  const [showToolResults, setShowToolResults] = useQueryState(
+    "showToolResults",
     parseAsBoolean.withDefault(true),
   );
-  const [hideToolResults, setHideToolResults] = useQueryState(
-    "hideToolResults",
-    parseAsBoolean.withDefault(false)
+  const [showToolCalls, setShowToolCalls] = useQueryState(
+    "showToolCalls",
+    parseAsBoolean.withDefault(false),
   );
   const [input, setInput] = useState("");
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
@@ -338,7 +338,7 @@ export function Thread() {
               !chatStarted && "flex flex-col items-stretch mt-[25vh]",
               chatStarted && "grid grid-rows-[1fr_auto]",
             )}
-            contentClassName="pt-8 pb-16  max-w-3xl mx-auto flex flex-col gap-4 w-full"
+            contentClassName="pt-8 pb-8 md:pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
             content={
               <>
                 {messages
@@ -413,31 +413,31 @@ export function Thread() {
                     />
 
                     <div className="flex items-center justify-between p-2 pt-4">
-                      <div className="flex flex-row items-center gap-6">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="render-tool-calls"
-                            checked={hideToolCalls ?? false}
-                            onCheckedChange={setHideToolCalls}
-                          />
-                          <Label
-                            htmlFor="render-tool-calls"
-                            className="text-sm text-gray-600"
-                          >
-                            Hide Tool Calls
-                          </Label>
-                        </div>
+                      <div className="flex flex-row items-center gap-2 mr-2">
                         <div className="flex items-center space-x-2">
                           <Switch
                             id="render-tool-results"
-                            checked={hideToolResults ?? false}
-                            onCheckedChange={setHideToolResults}
+                            checked={showToolResults ?? true}
+                            onCheckedChange={setShowToolResults}
                           />
                           <Label
                             htmlFor="render-tool-results"
                             className="text-sm text-gray-600"
                           >
-                            Hide Tool Results
+                            Tool Results
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="render-tool-calls"
+                            checked={showToolCalls ?? false}
+                            onCheckedChange={setShowToolCalls}
+                          />
+                          <Label
+                            htmlFor="render-tool-calls"
+                            className="text-sm text-gray-600"
+                          >
+                            Tool Calls
                           </Label>
                         </div>
                       </div>
