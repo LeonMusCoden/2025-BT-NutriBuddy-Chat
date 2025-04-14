@@ -22,11 +22,11 @@ export function LoyaltyCardsStep() {
     let connectedLoyaltyCard: ConnectedLoyaltyCardState = null;
     
     if (migros.isConnected && coop.isConnected) {
-      connectedLoyaltyCard = 'both';
+      connectedLoyaltyCard = 'Both';
     } else if (migros.isConnected) {
-      connectedLoyaltyCard = 'migros';
+      connectedLoyaltyCard = 'Migros';
     } else if (coop.isConnected) {
-      connectedLoyaltyCard = 'coop';
+      connectedLoyaltyCard = 'Coop';
     }
     
     updateFormData({ connectedLoyaltyCard });

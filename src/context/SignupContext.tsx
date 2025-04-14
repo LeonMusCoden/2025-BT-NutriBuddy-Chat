@@ -301,7 +301,7 @@ export const SignupProvider: React.FC<{
       }
       
       // Submit form to API
-      // await signup(signupData);
+      await signup(signupData);
       console.log(signupData);
       toast.success("Account created successfully");
       navigate("/");

@@ -4,7 +4,7 @@ const AUTH_CREDENTIALS = 'Basic bnV0cmlidWRkeTpNMjZ2NFkzdUxoR3U=';
 export interface UserRegistrationData {
   email: string;
   password: string;
-  connectedLoyaltyCard?: 'migros' | 'coop' | 'both' | null;
+  connectedLoyaltyCard?: 'Migros' | 'Coop' | 'Both' | null;
   migrosEmail?: string;
   migrosPassword?: string;
   coopEmail?: string;

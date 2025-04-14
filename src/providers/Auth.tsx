@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { nutriBuddyApi, UserInfo } from "@/lib/api";
+import { nutriBuddyApi, UserInfo, UserRegistrationData } from "@/lib/api";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -7,16 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<UserInfo>;
-  signup: (data: {
-    email: string;
-    password: string;
-    connectedLoyaltyCard?: 'migros' | 'coop' | 'both' | null;
-    migrosEmail?: string;
-    migrosPassword?: string;
-    coopEmail?: string;
-    coopPassword?: string;
-    profile_data?: Record<string, any>;
-  }) => Promise<UserInfo>;
+  signup: (data: UserRegistrationData) => Promise<UserInfo>;
   updateProfile: (profileData: Record<string, any>) => Promise<void>;
   logout: () => void;
 }
@@ -37,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = await nutriBuddyApi.getCurrentUser();
           setUser({
             ...userData,
-            token: token, 
+            token: token,
           });
         } catch (error) {
           console.error("Token validation error:", error);
@@ -61,16 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (data: {
-    email: string;
-    password: string;
-    connectedLoyaltyCard?: 'migros' | 'coop' | 'both' | null;
-    migrosEmail?: string;
-    migrosPassword?: string;
-    coopEmail?: string;
-    coopPassword?: string;
-    profile_data?: Record<string, any>;
-  }) => {
+  const signup = async (data: UserRegistrationData) => {
     try {
       setIsLoading(true);
       const userData = await nutriBuddyApi.registerUser(data);
@@ -88,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await nutriBuddyApi.updateProfileData(profileData);
-      
+
       // After updating the profile, fetch the latest user data to ensure consistency
       try {
         const userData = await nutriBuddyApi.getCurrentUser();
@@ -101,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       } catch (fetchError) {
         console.error("Error fetching updated user data:", fetchError);
-        
+
         // Fallback: update the local user state with the new profile data
         setUser(currentUser => {
           if (!currentUser) return null;

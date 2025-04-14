@@ -7,7 +7,7 @@ export type RetailerCredentials = {
   isConnected: boolean;
 };
 
-export type ConnectedLoyaltyCardState = 'migros' | 'coop' | 'both' | null;
+export type ConnectedLoyaltyCardState = 'Migros' | 'Coop' | 'Both' | null;
 
 export type SignupFormData = {
   // Basic account data
