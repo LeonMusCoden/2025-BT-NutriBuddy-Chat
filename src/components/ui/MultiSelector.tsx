@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type MultiSelectorProps = {
@@ -7,15 +7,20 @@ type MultiSelectorProps = {
   selectedOptions: string[];
   onChange: (selected: string[]) => void;
   className?: string;
+  allowCustomOptions?: boolean;
+  customOptionPlaceholder?: string;
 };
 
 export function MultiSelector({ 
   options, 
   selectedOptions, 
   onChange,
-  className = "" 
+  className = "",
+  allowCustomOptions = true,
+  customOptionPlaceholder = "Type to add custom option..."
 }: MultiSelectorProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [customOption, setCustomOption] = useState("");
   
   const toggleOption = (option: string) => {
     if (selectedOptions.includes(option)) {
@@ -28,6 +33,24 @@ export function MultiSelector({
   const removeOption = (option: string, e: React.MouseEvent) => {
     e.stopPropagation();
     onChange(selectedOptions.filter(item => item !== option));
+  };
+  
+  const addCustomOption = () => {
+    if (!customOption.trim()) return;
+    
+    // Don't add duplicates (case insensitive check)
+    if (!selectedOptions.some(op => op.toLowerCase() === customOption.toLowerCase()) &&
+        !options.some(op => op.toLowerCase() === customOption.toLowerCase())) {
+      onChange([...selectedOptions, customOption.trim()]);
+      setCustomOption("");
+    }
+  };
+
+  const handleCustomOptionKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCustomOption();
+    }
   };
   
   const filteredOptions = options.filter(option => 
@@ -65,6 +88,30 @@ export function MultiSelector({
         onChange={(e) => setSearchTerm(e.target.value)}
       />
       
+      {/* Custom option input */}
+      {allowCustomOptions && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="flex-1 p-2 border rounded-md"
+            placeholder={customOptionPlaceholder}
+            value={customOption}
+            onChange={(e) => setCustomOption(e.target.value)}
+            onKeyDown={handleCustomOptionKeyDown}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0"
+            onClick={addCustomOption}
+            disabled={!customOption.trim()}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add
+          </Button>
+        </div>
+      )}
+      
       {/* Options list */}
       <div className="max-h-60 overflow-y-auto border rounded-md">
         {filteredOptions.length > 0 ? (
@@ -87,30 +134,10 @@ export function MultiSelector({
           ))
         ) : (
           <div className="p-2 text-center text-gray-500">
-            {searchTerm ? "No matching options" : "No options available"}
+            {searchTerm && !filteredOptions.length ? "No matching options" : "No options available"}
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function Plus(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-      {...props}
-    >
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
   );
 }

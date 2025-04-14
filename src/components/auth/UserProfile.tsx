@@ -238,6 +238,8 @@ export function ProfileForm({
                 options={ALLERGENS}
                 selectedOptions={profile.allergens}
                 onChange={(selected) => updateProfileData({ allergens: selected })}
+                allowCustomOptions={true}
+                customOptionPlaceholder="Add other allergen..."
               />
             </div>
           </AccordionContent>
@@ -255,6 +257,8 @@ export function ProfileForm({
                 options={CUISINES}
                 selectedOptions={profile.favoriteCuisines}
                 onChange={(selected) => updateProfileData({ favoriteCuisines: selected })}
+                allowCustomOptions={true}
+                customOptionPlaceholder="Add other cuisine you like..."
               />
             </div>
             
@@ -264,6 +268,8 @@ export function ProfileForm({
                 options={CUISINES}
                 selectedOptions={profile.dislikedCuisines}
                 onChange={(selected) => updateProfileData({ dislikedCuisines: selected })}
+                allowCustomOptions={true}
+                customOptionPlaceholder="Add other cuisine you dislike..."
               />
             </div>
           </AccordionContent>
