@@ -33,12 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = nutriBuddyApi.loadAuthToken();
       if (token) {
         try {
-          // Placeholder until user profile endpoint is done
+          // Get the current user data from the API
+          const userData = await nutriBuddyApi.getCurrentUser();
           setUser({
-            email: "user@example.com",
-            register_time: Date.now(),
-            external_id: "user-id",
-            token: token,
+            ...userData,
+            token: token, 
           });
         } catch (error) {
           console.error("Token validation error:", error);
@@ -89,17 +88,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await nutriBuddyApi.updateProfileData(profileData);
-      // Update the local user state with the new profile data
-      setUser(currentUser => {
-        if (!currentUser) return null;
-        return {
-          ...currentUser,
-          profile_data: {
-            ...currentUser.profile_data,
-            ...profileData
-          }
-        };
-      });
+      
+      // After updating the profile, fetch the latest user data to ensure consistency
+      try {
+        const userData = await nutriBuddyApi.getCurrentUser();
+        setUser(currentUser => {
+          if (!currentUser) return null;
+          return {
+            ...userData,
+            token: currentUser.token, // Preserve the token
+          };
+        });
+      } catch (fetchError) {
+        console.error("Error fetching updated user data:", fetchError);
+        
+        // Fallback: update the local user state with the new profile data
+        setUser(currentUser => {
+          if (!currentUser) return null;
+          return {
+            ...currentUser,
+            profile_data: {
+              ...currentUser.profile_data,
+              ...profileData
+            }
+          };
+        });
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
       throw error;

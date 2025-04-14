@@ -100,6 +100,24 @@ export class NutriBuddyApi {
     return data;
   }
 
+  // Get current user information
+  public async getCurrentUser(): Promise<UserInfo> {
+    if (!this.authToken) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/user`, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get user data: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
   // Update user profile data
   public async updateProfileData(profileData: Record<string, any>): Promise<void> {
     if (!this.authToken) {
