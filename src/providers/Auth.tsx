@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ...userData,
             token: token,
           });
+          startScrapersIfConnected(userData.connected_loyalty_card);
         } catch (error) {
           console.error("Token validation error:", error);
           nutriBuddyApi.clearAuthToken();
@@ -41,11 +42,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
+  // Start scrapers for connected loyalty cards
+  const startScrapersIfConnected = async (connectedLoyaltyCard: string | null | undefined) => {
+    if (!connectedLoyaltyCard) return;
+    
+    try {
+      if (connectedLoyaltyCard === 'Migros' || connectedLoyaltyCard === 'Both') {
+        await nutriBuddyApi.startScraper('migros');
+        console.log('Started Migros scraper');
+      }
+      
+      if (connectedLoyaltyCard === 'Coop' || connectedLoyaltyCard === 'Both') {
+        await nutriBuddyApi.startScraper('coop');
+        console.log('Started Coop scraper');
+      }
+    } catch (error) {
+      console.error('Failed to start scrapers:', error);
+      // Don't show toast to user as this is a background operation
+    }
+  };
+
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
       const userData = await nutriBuddyApi.login({ email, password });
       setUser(userData);
+      startScrapersIfConnected(userData.connected_loyalty_card);
       return userData;
     } finally {
       setIsLoading(false);
@@ -57,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const userData = await nutriBuddyApi.registerUser(data);
       setUser(userData);
+      startScrapersIfConnected(userData.connected_loyalty_card);
       return userData;
     } finally {
       setIsLoading(false);
