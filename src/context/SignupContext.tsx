@@ -286,7 +286,7 @@ export const SignupProvider: React.FC<{
         email: formData.email,
         password: formData.password,
         connectedLoyaltyCard: formData.connectedLoyaltyCard,
-        profile_data: formData.profile
+        profileData: formData.profile
       } as any;
       
       // Add retailer credentials if connected

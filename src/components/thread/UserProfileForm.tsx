@@ -17,8 +17,6 @@ export function UserProfileForm({ onClose }: { onClose?: () => void }) {
 
       setIsLoading(true);
       try {
-        // In a real implementation, we'd fetch the profile data from the API
-        // For now, use what we have in the user object if available
         if (user.profile_data) {
           setInitialProfile({
             ...defaultProfile,

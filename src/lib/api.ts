@@ -9,7 +9,7 @@ export interface UserRegistrationData {
   migrosPassword?: string;
   coopEmail?: string;
   coopPassword?: string;
-  profile_data?: Record<string, any>;
+  profileData?: Record<string, any>;
 }
 
 export interface UserLoginData {
