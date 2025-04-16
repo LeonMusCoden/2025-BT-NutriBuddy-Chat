@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { nutriBuddyApi, UserInfo, UserRegistrationData } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -6,6 +6,7 @@ interface AuthContextType {
   user: UserInfo | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  getCurrentUser: () => Promise<UserInfo | null>;
   login: (email: string, password: string) => Promise<UserInfo>;
   signup: (data: UserRegistrationData) => Promise<UserInfo>;
   updateProfile: (profileData: Record<string, any>) => Promise<void>;
@@ -18,25 +19,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const getCurrentUser = async (): Promise<UserInfo | null> => {
+    const token = nutriBuddyApi.loadAuthToken();
+    if (!token) {
+      return null;
+    }
+    
+    try {
+      // Get the current user data from the API
+      const userData = await nutriBuddyApi.getCurrentUser();
+      setUser({
+        ...userData,
+        token: token,
+      });
+      return userData;
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      nutriBuddyApi.clearAuthToken();
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
-      const token = nutriBuddyApi.loadAuthToken();
-      if (token) {
-        try {
-          // Get the current user data from the API
-          const userData = await nutriBuddyApi.getCurrentUser();
-          setUser({
-            ...userData,
-            token: token,
-          });
-          startScrapersIfConnected(userData.connected_loyalty_card);
-        } catch (error) {
-          console.error("Token validation error:", error);
-          nutriBuddyApi.clearAuthToken();
-        }
+      try {
+        await getCurrentUser();
+      } catch (error) {
+        console.error("Token validation error:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkAuth();
@@ -137,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated: !!user,
         isLoading,
+        getCurrentUser,
         login,
         signup,
         updateProfile,
