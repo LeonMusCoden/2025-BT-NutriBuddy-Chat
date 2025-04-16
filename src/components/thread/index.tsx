@@ -35,6 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { useAuth } from "@/providers/Auth";
 
 function StickyToBottomContent(props: {
   content: ReactNode;
@@ -116,6 +117,8 @@ export function Thread() {
   const stream = useStreamContext();
   const messages = stream.messages;
   const isLoading = stream.isLoading;
+  const { user } = useAuth();
+
 
   const lastError = useRef<string | undefined>(undefined);
 
@@ -174,7 +177,7 @@ export function Thread() {
 
     const toolMessages = ensureToolCallsHaveResponses(stream.messages);
     stream.submit(
-      { messages: [...toolMessages, newHumanMessage] },
+      { messages: [...toolMessages, newHumanMessage], user_id: user!.token },
       {
         streamMode: ["values"],
         optimisticValues: (prev) => ({

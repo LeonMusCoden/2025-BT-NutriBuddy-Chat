@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { createClient } from "./client";
 import { useAuth } from "./Auth";
 
-export type StateType = { messages: Message[]; ui?: UIMessage[] };
+export type StateType = { messages: Message[]; ui?: UIMessage[]; user_id: string; };
 
 const useTypedStream = useStream<
   StateType,
