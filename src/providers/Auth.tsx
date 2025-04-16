@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { nutriBuddyApi, UserInfo, UserRegistrationData } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -19,12 +19,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getCurrentUser = async (): Promise<UserInfo | null> => {
+  const getCurrentUser = useCallback(async (): Promise<UserInfo | null> => {
     const token = nutriBuddyApi.loadAuthToken();
     if (!token) {
       return null;
     }
-    
+
     try {
       // Get the current user data from the API
       const userData = await nutriBuddyApi.getCurrentUser();
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       nutriBuddyApi.clearAuthToken();
       return null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -58,13 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Start scrapers for connected loyalty cards
   const startScrapersIfConnected = async (connectedLoyaltyCard: string | null | undefined) => {
     if (!connectedLoyaltyCard) return;
-    
+
     try {
       if (connectedLoyaltyCard === 'Migros' || connectedLoyaltyCard === 'Both') {
         await nutriBuddyApi.startScraper('migros');
         console.log('Started Migros scraper');
       }
-      
+
       if (connectedLoyaltyCard === 'Coop' || connectedLoyaltyCard === 'Both') {
         await nutriBuddyApi.startScraper('coop');
         console.log('Started Coop scraper');

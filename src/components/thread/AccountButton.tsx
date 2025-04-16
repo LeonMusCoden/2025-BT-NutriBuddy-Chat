@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/providers/Auth";
 import { TooltipIconButton } from "@/components/thread/tooltip-icon-button";
@@ -16,9 +16,13 @@ import { toast } from "sonner";
 export function AccountButton() {
   const { user, logout, getCurrentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const refreshedRef = useRef(false);
 
   const refreshUserData = useCallback(async () => {
+    if (refreshedRef.current) return;
+    
     try {
+      refreshedRef.current = true;
       const userData = await getCurrentUser();
       if (!userData) {
         toast.error("Error refreshing profile");
@@ -33,6 +37,9 @@ export function AccountButton() {
   useEffect(() => {
     if (isOpen) {
       refreshUserData();
+    } else {
+      // Reset the ref when the slideover is closed
+      refreshedRef.current = false;
     }
   }, [isOpen, refreshUserData]);
 
