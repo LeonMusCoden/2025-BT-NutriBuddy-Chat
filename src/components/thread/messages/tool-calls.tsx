@@ -110,95 +110,7 @@ function ToolCallHeader({ title, tool_call_id, show_call_id }: { title: string, 
   );
 }
 
-export function ToolResult({ message, show_call_id = true }: { message: ToolMessage, show_call_id: boolean }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Handle different tool message types
-  const isChart = message.name === 'chart' && message.artifact;
-  const isGraphDB = message.name === 'graphdb' && message.artifact;
-  const isProducts = message.name === 'products';
-
-  // Toggle expansion state
-  const toggleExpansion = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  // If it's a chart, render the Plotly component with collapsible behavior
-  if (isChart) {
-    return (
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <ToolCallHeader title={"Chart"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
-
-        <div className="p-4">
-          {/* Use a container with masking in preview mode */}
-          <div
-            className="w-full relative transition-all duration-300"
-            style={{
-              maxHeight: isExpanded ? '2000px' : '250px',
-              overflow: isExpanded ? 'visible' : 'hidden'
-            }}
-          >
-            <PlotlyChart data={message.artifact} />
-
-            {/* Gradient overlay only when in preview mode */}
-            {!isExpanded && (
-              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
-            )}
-          </div>
-        </div>
-
-        <ToggleButton isExpanded={isExpanded} onClick={toggleExpansion} />
-      </div>
-    );
-  }
-
-  // If it's a GraphDB result, render the GraphDBTable component with collapsible behavior
-  if (isGraphDB) {
-    return (
-      <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
-        <ToolCallHeader title={"Database Result"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
-
-        <div className="relative">
-          <div className={`p-4 ${!isExpanded ? "max-h-[200px] overflow-hidden" : ""}`}>
-            <GraphDBTable data={message.artifact} />
-
-            {/* Gradient overlay when collapsed */}
-            {!isExpanded && (
-              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
-            )}
-          </div>
-
-          <ToggleButton isExpanded={isExpanded} onClick={toggleExpansion} />
-        </div>
-      </div>
-    );
-  }
-
-  // If it's a products result, render the ProductsResult component
-  if (isProducts) {
-    try {
-
-      if (!Array.isArray(message.artifact)) {
-        throw new Error("Products data must be an array");
-      }
-
-      const products = typeof message.artifact === 'string' ? message.artifact.map((jsonString: string) => JSON.parse(jsonString)) : message.artifact;
-
-      return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden w-full max-w-full flex-grow">
-          <ToolCallHeader title={"Product Result"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
-
-          <div className="p-4">
-            <ProductsResult data={products} />
-          </div>
-        </div>
-      );
-    } catch (error) {
-      console.error("Error parsing products data:", error);
-      // Fall back to standard rendering if parsing fails
-    }
-  }
-
+export function DefaultToolResultRenderer({ message, isExpanded, toggleExpansion, show_call_id = true }: { message: ToolMessage, isExpanded: boolean, toggleExpansion: () => void, show_call_id: boolean }) {
   // Standard tool result rendering
   let parsedContent: any;
   let isJsonContent = false;
@@ -278,4 +190,106 @@ export function ToolResult({ message, show_call_id = true }: { message: ToolMess
       </div>
     </div>
   );
+}
+
+export function ToolResult({ message, show_call_id = true }: { message: ToolMessage, show_call_id: boolean }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Toggle expansion state
+  const toggleExpansion = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  if (!('artifact' in message)) {
+    return (
+      <DefaultToolResultRenderer message={message} isExpanded={isExpanded} toggleExpansion={toggleExpansion} show_call_id={show_call_id} />
+    )
+  }
+
+  // Handle different tool message types
+  const isChart = message.name === 'chart' && message.artifact;
+  const isGraphDB = message.name === 'graphdb' && message.artifact;
+  const isProducts = message.name === 'products';
+
+  // If it's a chart, render the Plotly component with collapsible behavior
+  if (isChart) {
+    return (
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <ToolCallHeader title={"Chart"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
+
+        <div className="p-4">
+          {/* Use a container with masking in preview mode */}
+          <div
+            className="w-full relative transition-all duration-300"
+            style={{
+              maxHeight: isExpanded ? '2000px' : '250px',
+              overflow: isExpanded ? 'visible' : 'hidden'
+            }}
+          >
+            <PlotlyChart data={message.artifact} />
+
+            {/* Gradient overlay only when in preview mode */}
+            {!isExpanded && (
+              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
+          </div>
+        </div>
+
+        <ToggleButton isExpanded={isExpanded} onClick={toggleExpansion} />
+      </div>
+    );
+  }
+
+  // If it's a GraphDB result, render the GraphDBTable component with collapsible behavior
+  if (isGraphDB) {
+    return (
+      <div className="border border-gray-200 rounded-lg overflow-hidden w-full">
+        <ToolCallHeader title={"Database Result"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
+
+        <div className="relative">
+          <div className={`p-4 ${!isExpanded ? "max-h-[200px] overflow-hidden" : ""}`}>
+            <GraphDBTable data={message.artifact} />
+
+            {/* Gradient overlay when collapsed */}
+            {!isExpanded && (
+              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+            )}
+          </div>
+
+          <ToggleButton isExpanded={isExpanded} onClick={toggleExpansion} />
+        </div>
+      </div>
+    );
+  }
+
+  // If it's a products result, render the ProductsResult component
+  if (isProducts) {
+    try {
+
+      if (!Array.isArray(message.artifact)) {
+        throw new Error("Products data must be an array");
+      }
+
+      const products = message.artifact.every(item => typeof item === 'string')
+        ? message.artifact.map((jsonString: string) => JSON.parse(jsonString))
+        : message.artifact;
+
+      return (
+        <div className="border border-gray-200 rounded-lg overflow-hidden w-full max-w-full flex-grow">
+          <ToolCallHeader title={"Product Result"} tool_call_id={message.tool_call_id} show_call_id={show_call_id} />
+
+          <div className="p-4">
+            <ProductsResult data={products} />
+          </div>
+        </div>
+      );
+    } catch (error) {
+      console.error("Error parsing products data:", error);
+      // Fall back to standard rendering if parsing fails
+    }
+  }
+
+  return (
+    <DefaultToolResultRenderer message={message} isExpanded={isExpanded} toggleExpansion={toggleExpansion} show_call_id={show_call_id} />
+  )
 }

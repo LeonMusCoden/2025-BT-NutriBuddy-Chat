@@ -1,74 +1,43 @@
-import { useEffect, useRef, useState } from 'react';
-import Plotly from 'plotly.js-dist';
+import { useState } from 'react';
+// @ts-expect-error Plotly does not have TS definitions
+import Plot from 'react-plotly.js';
 
 interface PlotlyChartProps {
   data: any;
 }
 
 export function PlotlyChart({ data }: PlotlyChartProps) {
-  const chartRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  useEffect(() => {
-    if (!chartRef.current || !data) return;
-    try {
-      // Parse data if it's a string
-      const plotlyData = typeof data === 'string' ? JSON.parse(data) : data;
-      
-      // Fullscreen icon
-      const fullscreenIcon = {
-        'width': 512,
-        'height': 512,
-        'path': "M512 512v-208l-80 80-96-96-48 48 96 96-80 80z M512 0h-208l80 80-96 96 48 48 96-96 80 80z M0 512h208l-80-80 96-96-48-48-96 96-80-80z M0 0v208l80-80 96 96 48-48-96-96 80-80z"
-      };
-      
-      // Create the plot with responsive config and fullscreen button
-      Plotly.react(chartRef.current, plotlyData.data, {
-        ...plotlyData.layout,
-        autosize: true,
-      }, {
-        responsive: true,
-        displayModeBar: true,
-        modeBarButtonsToAdd: [{
-          name: 'Fullscreen',
-          icon: fullscreenIcon,
-          click: function(gd) {
-            const chartDiv = gd as HTMLElement;
-            chartDiv.classList.toggle('fullscreen');
-            setIsFullscreen(!isFullscreen);
-            Plotly.Plots.resize(gd);
-          }
-        }],
-        modeBarButtonsToRemove: ['lasso', 'pan', 'select', 'zoomIn', 'zoomOut', 'resetScale', 'autoscale', 'zoom']
-      });
-      
-      // Ensure the plot resizes immediately after rendering
-      setTimeout(() => {
-        if (chartRef.current) {
-          Plotly.Plots.resize(chartRef.current);
-        }
-      }, 100);
-      
-      // Handle window resize
-      const handleResize = () => {
-        if (chartRef.current) {
-          Plotly.Plots.resize(chartRef.current);
-        }
-      };
-      
-      window.addEventListener('resize', handleResize);
-      
-      // Cleanup function
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        if (chartRef.current) {
-          Plotly.purge(chartRef.current);
-        }
-      };
-    } catch (error) {
-      console.error('Error rendering Plotly chart:', error);
-    }
-  }, [data, isFullscreen]);
+  // Parse data if it's a string
+  const plotlyData = typeof data === 'string' ? JSON.parse(data) : data;
+  
+  // Fullscreen icon path
+  const fullscreenIcon = {
+    'width': 512,
+    'height': 512,
+    'path': "M512 512v-208l-80 80-96-96-48 48 96 96-80 80z M512 0h-208l80 80-96 96 48 48 96-96 80 80z M0 512h208l-80-80 96-96-48-48-96 96-80-80z M0 0v208l80-80 96 96 48-48-96-96 80-80z"
+  };
+  
+  // Create configuration with fullscreen button
+  const config = {
+    responsive: true,
+    displayModeBar: true,
+    modeBarButtonsToAdd: [{
+      name: 'Fullscreen',
+      icon: fullscreenIcon,
+      click: function() {
+        setIsFullscreen(!isFullscreen);
+      }
+    }],
+    modeBarButtonsToRemove: ['lasso', 'pan', 'select', 'zoomIn', 'zoomOut', 'resetScale', 'autoscale', 'zoom']
+  };
+  
+  // Combine user layout with autosize
+  const layout = {
+    ...plotlyData.layout,
+    autosize: true
+  };
   
   return (
     <>
@@ -95,10 +64,15 @@ export function PlotlyChart({ data }: PlotlyChartProps) {
         }
         `}
       </style>
-      <div 
-        ref={chartRef} 
-        className="w-full"
-      />
+      <div className={`w-full ${isFullscreen ? 'fullscreen' : ''}`}>
+        <Plot
+          data={plotlyData.data}
+          layout={layout}
+          config={config}
+          style={{ width: '100%', height: '100%' }}
+          useResizeHandler={true}
+        />
+      </div>
     </>
   );
 }

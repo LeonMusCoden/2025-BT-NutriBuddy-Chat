@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Info } from "lucide-react";
 import { motion } from "framer-motion";
 
 // Types definition for product data

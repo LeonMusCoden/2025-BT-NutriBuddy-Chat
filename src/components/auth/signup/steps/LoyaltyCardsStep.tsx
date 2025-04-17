@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { nutriBuddyApi } from "@/lib/api";
-import { RetailerCredentials, ConnectedLoyaltyCardState } from "../types";
+import { RetailerCredentials, ConnectedLoyaltyCardState, SignupFormData } from "../types";
 import { RetailerCredentialsForm } from "../components/RetailerCredentialsForm";
 import { useSignup } from "@/context/SignupContext";
 
@@ -66,7 +66,7 @@ export function LoyaltyCardsStep() {
     }
 
     // Update validation status to 'validating'
-    const updates = retailer === 'migros' 
+    const updates: Partial<SignupFormData> = retailer === 'migros' 
       ? { migros: { ...migros, validationStatus: 'validating' } }
       : { coop: { ...coop, validationStatus: 'validating' } };
     
@@ -76,7 +76,7 @@ export function LoyaltyCardsStep() {
       const isValid = await nutriBuddyApi.validateCredentials(retailer, email, password);
       
       // Update validation status based on result
-      const statusUpdates = retailer === 'migros'
+      const statusUpdates: Partial<SignupFormData> = retailer === 'migros'
         ? { migros: { ...migros, validationStatus: isValid ? 'valid' : 'invalid' } }
         : { coop: { ...coop, validationStatus: isValid ? 'valid' : 'invalid' } };
       
@@ -89,7 +89,7 @@ export function LoyaltyCardsStep() {
       }
     } catch (error) {
       // Update validation status to 'invalid' on error
-      const errorUpdates = retailer === 'migros'
+      const errorUpdates: Partial<SignupFormData> = retailer === 'migros'
         ? { migros: { ...migros, validationStatus: 'invalid' } }
         : { coop: { ...coop, validationStatus: 'invalid' } };
       
