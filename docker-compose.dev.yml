@@ -10,7 +10,7 @@ services:
       - "5173:5173"
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost
+      - VITE_API_URL=http://localhost:8123
       - VITE_ASSISTANT_ID=nutribuddy v1.2.1
       - VITE_LANGSMITH_API_KEY=M26v4Y3uLhGu
     stdin_open: true
