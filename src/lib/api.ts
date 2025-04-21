@@ -36,12 +36,12 @@ export class NutriBuddyApi {
       'Authorization': AUTH_CREDENTIALS,
       ...additionalHeaders
     };
-    
+
     // Add auth token if available
     if (this.authToken) {
       headers['Authentication'] = this.authToken;
     }
-    
+
     return headers;
   }
 
@@ -137,16 +137,24 @@ export class NutriBuddyApi {
 
   // Validate credentials
   public async validateCredentials(retailer: 'migros' | 'coop', email: string, password: string): Promise<boolean> {
-    const response = await fetch(`${API_BASE_URL}/collector-api`, {
-      method: 'GET',
-      headers: this.getHeaders({
+    try {
+      const headers = {
+        'Authorization': AUTH_CREDENTIALS,
         'endpoint': `/validate/${retailer}-credentials`,
         [`${retailer}-email`]: email,
         [`${retailer}-password`]: password
-      })
-    });
+      };
 
-    return response.ok;
+      const response = await fetch(`${API_BASE_URL}/collector-api`, {
+        method: 'GET',
+        headers: headers
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error(`Error validating ${retailer} credentials:`, error);
+      return false;
+    }
   }
 
   // Start scraper for the current user
