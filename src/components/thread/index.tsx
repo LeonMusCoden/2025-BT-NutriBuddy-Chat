@@ -25,6 +25,7 @@ import {
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import ThreadHistory from "./history";
+import { getContentString } from "./utils";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Label } from "../ui/label";
@@ -128,14 +129,33 @@ export function Thread() {
   useEffect(() => {
     if (
       messages.length !== prevMessageLength.current &&
-      messages?.length &&
-      messages[messages.length - 1].type === "ai"
+      messages?.length
     ) {
-      setFirstTokenReceived(true);
+      const lastMessage = messages[messages.length - 1];
+
+      // Only consider a token "received" if it has content that would be visible
+      if (lastMessage.type === "ai") {
+        const contentString = getContentString(lastMessage.content);
+        const hasVisibleTextContent = contentString.length > 0;
+
+        // Check if it has visible tool calls
+        const hasVisibleToolCalls = showToolCalls && lastMessage.tool_calls && lastMessage.tool_calls.length > 0;
+
+        // If it has any visible content, mark the first token as received
+        if (hasVisibleTextContent || hasVisibleToolCalls) {
+          setFirstTokenReceived(true);
+        }
+      }
+      else if (lastMessage.type === "tool") {
+        // Tool message is only visible if showToolResults is true
+        if (showToolResults) {
+          setFirstTokenReceived(true);
+        }
+      }
     }
 
     prevMessageLength.current = messages.length;
-  }, [messages]);
+  }, [messages, showToolCalls, showToolResults]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
