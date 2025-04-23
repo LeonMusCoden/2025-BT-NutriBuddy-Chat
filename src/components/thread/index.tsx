@@ -31,6 +31,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
 import { useAuth } from "@/providers/Auth";
+import { WelcomePopup } from "./WelcomePopup";
 
 function StickyToBottomContent(props: {
   content: ReactNode;
@@ -205,76 +206,53 @@ export function Thread() {
   );
 
   return (
-    <div className="flex w-full h-screen overflow-hidden">
-      <div className="relative lg:flex hidden">
+    <>
+      <WelcomePopup />
+      <div className="flex w-full h-screen overflow-hidden">
+        <div className="relative lg:flex hidden">
+          <motion.div
+            className="absolute h-full border-r bg-white overflow-hidden z-20"
+            style={{ width: 300 }}
+            animate={
+              isLargeScreen
+                ? { x: chatHistoryOpen ? 0 : -300 }
+                : { x: chatHistoryOpen ? 0 : -300 }
+            }
+            initial={{ x: -300 }}
+            transition={
+              isLargeScreen
+                ? { type: "spring", stiffness: 300, damping: 30 }
+                : { duration: 0 }
+            }
+          >
+            <div className="relative h-full" style={{ width: 300 }}>
+              <ThreadHistory />
+            </div>
+          </motion.div>
+        </div>
         <motion.div
-          className="absolute h-full border-r bg-white overflow-hidden z-20"
-          style={{ width: 300 }}
-          animate={
-            isLargeScreen
-              ? { x: chatHistoryOpen ? 0 : -300 }
-              : { x: chatHistoryOpen ? 0 : -300 }
-          }
-          initial={{ x: -300 }}
+          className={cn(
+            "flex-1 flex flex-col min-w-0 overflow-hidden relative",
+            !chatStarted && "grid-rows-[1fr]",
+          )}
+          layout={isLargeScreen}
+          animate={{
+            marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
+            width: chatHistoryOpen
+              ? isLargeScreen
+                ? "calc(100% - 300px)"
+                : "100%"
+              : "100%",
+          }}
           transition={
             isLargeScreen
               ? { type: "spring", stiffness: 300, damping: 30 }
               : { duration: 0 }
           }
         >
-          <div className="relative h-full" style={{ width: 300 }}>
-            <ThreadHistory />
-          </div>
-        </motion.div>
-      </div>
-      <motion.div
-        className={cn(
-          "flex-1 flex flex-col min-w-0 overflow-hidden relative",
-          !chatStarted && "grid-rows-[1fr]",
-        )}
-        layout={isLargeScreen}
-        animate={{
-          marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
-          width: chatHistoryOpen
-            ? isLargeScreen
-              ? "calc(100% - 300px)"
-              : "100%"
-            : "100%",
-        }}
-        transition={
-          isLargeScreen
-            ? { type: "spring", stiffness: 300, damping: 30 }
-            : { duration: 0 }
-        }
-      >
-        {!chatStarted && (
-          <div className="absolute top-0 left-0 w-full flex items-center justify-between gap-3 p-2 pl-4 z-10">
-            <div>
-              {(!chatHistoryOpen || !isLargeScreen) && (
-                <Button
-                  className="hover:bg-gray-100"
-                  variant="ghost"
-                  onClick={() => setChatHistoryOpen((p) => !p)}
-                >
-                  {chatHistoryOpen ? (
-                    <PanelRightOpen className="size-5" />
-                  ) : (
-                    <PanelRightClose className="size-5" />
-                  )}
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center">
-                <AccountButton />
-              </div>
-            </div>
-          </div>
-        )}
-        {chatStarted && (
-          <div className="flex items-center justify-between gap-3 p-2 z-10 relative">
-            <div className="flex items-center justify-start gap-2 relative">
-              <div className="absolute left-0 z-10">
+          {!chatStarted && (
+            <div className="absolute top-0 left-0 w-full flex items-center justify-between gap-3 p-2 pl-4 z-10">
+              <div>
                 {(!chatHistoryOpen || !isLargeScreen) && (
                   <Button
                     className="hover:bg-gray-100"
@@ -289,176 +267,202 @@ export function Thread() {
                   </Button>
                 )}
               </div>
-              <motion.button
-                className="flex gap-2 items-center cursor-pointer"
-                onClick={() => setThreadId(null)}
-                animate={{
-                  marginLeft: !chatHistoryOpen ? 48 : 0,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                }}
-              >
-                <LangGraphLogoSVG width={32} height={32} />
-                <span className="text-xl font-semibold tracking-tight">
-                  NutriBuddy Chat
-                </span>
-              </motion.button>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex items-center">
-                <AccountButton />
-              </div>
-              <TooltipIconButton
-                size="lg"
-                className="p-4"
-                tooltip="New thread"
-                variant="ghost"
-                onClick={() => setThreadId(null)}
-              >
-                <SquarePen className="size-5" />
-              </TooltipIconButton>
-            </div>
-
-            <div className="absolute inset-x-0 top-full h-5 bg-gradient-to-b from-background to-background/0" />
-          </div>
-        )}
-
-        <StickToBottom className="relative flex-1 overflow-hidden">
-          <StickyToBottomContent
-            className={cn(
-              "absolute px-4 inset-0 overflow-y-scroll [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent",
-              !chatStarted && "flex flex-col items-stretch mt-[25vh]",
-              chatStarted && "grid grid-rows-[1fr_auto]",
-            )}
-            contentClassName="pt-8 pb-8 md:pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
-            content={
-              <>
-                {messages
-                  .filter((m) => !m.id?.startsWith(DO_NOT_RENDER_ID_PREFIX))
-                  .map((message, index) =>
-                    message.type === "human" ? (
-                      <HumanMessage
-                        key={message.id || `${message.type}-${index}`}
-                        message={message}
-                        isLoading={isLoading}
-                      />
-                    ) : (
-                      <AssistantMessage
-                        key={message.id || `${message.type}-${index}`}
-                        message={message}
-                        isLoading={isLoading}
-                        handleRegenerate={handleRegenerate}
-                      />
-                    ),
-                  )}
-                {/* Special rendering case where there are no AI/tool messages, but there is an interrupt.
-                    We need to render it outside of the messages list, since there are no messages to render */}
-                {hasNoAIOrToolMessages && !!stream.interrupt && (
-                  <AssistantMessage
-                    key="interrupt-msg"
-                    message={undefined}
-                    isLoading={isLoading}
-                    handleRegenerate={handleRegenerate}
-                  />
-                )}
-                {isLoading && !firstTokenReceived && (
-                  <AssistantMessageLoading />
-                )}
-              </>
-            }
-            footer={
-              <div className="sticky flex flex-col items-center gap-8 bottom-0 bg-white">
-                {!chatStarted && (
-                  <div className="flex gap-3 items-center">
-                    <LangGraphLogoSVG className="flex-shrink-0 h-8" />
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                      NutriBuddy Chat
-                    </h1>
-                  </div>
-                )}
-
-                <ScrollToBottom className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 animate-in fade-in-0 zoom-in-95" />
-
-                <div className="bg-muted rounded-2xl border shadow-xs mx-auto mb-8 w-full max-w-3xl relative z-10">
-                  <form
-                    onSubmit={handleSubmit}
-                    className="grid grid-rows-[1fr_auto] gap-2 max-w-3xl mx-auto"
-                  >
-                    <textarea
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (
-                          e.key === "Enter" &&
-                          !e.shiftKey &&
-                          !e.metaKey &&
-                          !e.nativeEvent.isComposing
-                        ) {
-                          e.preventDefault();
-                          const el = e.target as HTMLElement | undefined;
-                          const form = el?.closest("form");
-                          form?.requestSubmit();
-                        }
-                      }}
-                      placeholder="Type your message..."
-                      className="p-3.5 pb-0 border-none bg-transparent field-sizing-content shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none"
-                    />
-
-                    <div className="flex items-center justify-between p-2 pt-4">
-                      <div className="flex flex-row items-center gap-2 mr-2">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="render-tool-results"
-                            checked={showToolResults ?? true}
-                            onCheckedChange={setShowToolResults}
-                          />
-                          <Label
-                            htmlFor="render-tool-results"
-                            className="text-sm text-gray-600"
-                          >
-                            Tool Results
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="render-tool-calls"
-                            checked={showToolCalls ?? false}
-                            onCheckedChange={setShowToolCalls}
-                          />
-                          <Label
-                            htmlFor="render-tool-calls"
-                            className="text-sm text-gray-600"
-                          >
-                            Tool Calls
-                          </Label>
-                        </div>
-                      </div>
-                      {stream.isLoading ? (
-                        <Button key="stop" onClick={() => stream.stop()}>
-                          <LoaderCircle className="w-4 h-4 animate-spin" />
-                          Cancel
-                        </Button>
-                      ) : (
-                        <Button
-                          type="submit"
-                          className="transition-all shadow-md"
-                          disabled={isLoading || !input.trim()}
-                        >
-                          Send
-                        </Button>
-                      )}
-                    </div>
-                  </form>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center">
+                  <AccountButton />
                 </div>
               </div>
-            }
-          />
-        </StickToBottom>
-      </motion.div>
-    </div>
+            </div>
+          )}
+          {chatStarted && (
+            <div className="flex items-center justify-between gap-3 p-2 z-10 relative">
+              <div className="flex items-center justify-start gap-2 relative">
+                <div className="absolute left-0 z-10">
+                  {(!chatHistoryOpen || !isLargeScreen) && (
+                    <Button
+                      className="hover:bg-gray-100"
+                      variant="ghost"
+                      onClick={() => setChatHistoryOpen((p) => !p)}
+                    >
+                      {chatHistoryOpen ? (
+                        <PanelRightOpen className="size-5" />
+                      ) : (
+                        <PanelRightClose className="size-5" />
+                      )}
+                    </Button>
+                  )}
+                </div>
+                <motion.button
+                  className="flex gap-2 items-center cursor-pointer"
+                  onClick={() => setThreadId(null)}
+                  animate={{
+                    marginLeft: !chatHistoryOpen ? 48 : 0,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30,
+                  }}
+                >
+                  <LangGraphLogoSVG width={32} height={32} />
+                  <span className="text-xl font-semibold tracking-tight">
+                    NutriBuddy Chat
+                  </span>
+                </motion.button>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center">
+                  <AccountButton />
+                </div>
+                <TooltipIconButton
+                  size="lg"
+                  className="p-4"
+                  tooltip="New thread"
+                  variant="ghost"
+                  onClick={() => setThreadId(null)}
+                >
+                  <SquarePen className="size-5" />
+                </TooltipIconButton>
+              </div>
+
+              <div className="absolute inset-x-0 top-full h-5 bg-gradient-to-b from-background to-background/0" />
+            </div>
+          )}
+
+          <StickToBottom className="relative flex-1 overflow-hidden">
+            <StickyToBottomContent
+              className={cn(
+                "absolute px-4 inset-0 overflow-y-scroll [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent",
+                !chatStarted && "flex flex-col items-stretch mt-[25vh]",
+                chatStarted && "grid grid-rows-[1fr_auto]",
+              )}
+              contentClassName="pt-8 pb-8 md:pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
+              content={
+                <>
+                  {messages
+                    .filter((m) => !m.id?.startsWith(DO_NOT_RENDER_ID_PREFIX))
+                    .map((message, index) =>
+                      message.type === "human" ? (
+                        <HumanMessage
+                          key={message.id || `${message.type}-${index}`}
+                          message={message}
+                          isLoading={isLoading}
+                        />
+                      ) : (
+                        <AssistantMessage
+                          key={message.id || `${message.type}-${index}`}
+                          message={message}
+                          isLoading={isLoading}
+                          handleRegenerate={handleRegenerate}
+                        />
+                      ),
+                    )}
+                  {/* Special rendering case where there are no AI/tool messages, but there is an interrupt.
+                    We need to render it outside of the messages list, since there are no messages to render */}
+                  {hasNoAIOrToolMessages && !!stream.interrupt && (
+                    <AssistantMessage
+                      key="interrupt-msg"
+                      message={undefined}
+                      isLoading={isLoading}
+                      handleRegenerate={handleRegenerate}
+                    />
+                  )}
+                  {isLoading && !firstTokenReceived && (
+                    <AssistantMessageLoading />
+                  )}
+                </>
+              }
+              footer={
+                <div className="sticky flex flex-col items-center gap-8 bottom-0 bg-white">
+                  {!chatStarted && (
+                    <div className="flex gap-3 items-center">
+                      <LangGraphLogoSVG className="flex-shrink-0 h-8" />
+                      <h1 className="text-2xl font-semibold tracking-tight">
+                        NutriBuddy Chat
+                      </h1>
+                    </div>
+                  )}
+
+                  <ScrollToBottom className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 animate-in fade-in-0 zoom-in-95" />
+
+                  <div className="bg-muted rounded-2xl border shadow-xs mx-auto mb-8 w-full max-w-3xl relative z-10">
+                    <form
+                      onSubmit={handleSubmit}
+                      className="grid grid-rows-[1fr_auto] gap-2 max-w-3xl mx-auto"
+                    >
+                      <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (
+                            e.key === "Enter" &&
+                            !e.shiftKey &&
+                            !e.metaKey &&
+                            !e.nativeEvent.isComposing
+                          ) {
+                            e.preventDefault();
+                            const el = e.target as HTMLElement | undefined;
+                            const form = el?.closest("form");
+                            form?.requestSubmit();
+                          }
+                        }}
+                        placeholder="Type your message..."
+                        className="p-3.5 pb-0 border-none bg-transparent field-sizing-content shadow-none ring-0 outline-none focus:outline-none focus:ring-0 resize-none"
+                      />
+
+                      <div className="flex items-center justify-between p-2 pt-4">
+                        <div className="flex flex-row items-center gap-2 mr-2">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="render-tool-results"
+                              checked={showToolResults ?? true}
+                              onCheckedChange={setShowToolResults}
+                            />
+                            <Label
+                              htmlFor="render-tool-results"
+                              className="text-sm text-gray-600"
+                            >
+                              Tool Results
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="render-tool-calls"
+                              checked={showToolCalls ?? false}
+                              onCheckedChange={setShowToolCalls}
+                            />
+                            <Label
+                              htmlFor="render-tool-calls"
+                              className="text-sm text-gray-600"
+                            >
+                              Tool Calls
+                            </Label>
+                          </div>
+                        </div>
+                        {stream.isLoading ? (
+                          <Button key="stop" onClick={() => stream.stop()}>
+                            <LoaderCircle className="w-4 h-4 animate-spin" />
+                            Cancel
+                          </Button>
+                        ) : (
+                          <Button
+                            type="submit"
+                            className="transition-all shadow-md"
+                            disabled={isLoading || !input.trim()}
+                          >
+                            Send
+                          </Button>
+                        )}
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              }
+            />
+          </StickToBottom>
+        </motion.div>
+      </div>
+    </>
   );
 }

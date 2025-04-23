@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/providers/Auth';
 import { defaultProfile } from '@/components/auth/UserProfile';
-import { 
-  STEPS, 
-  SignupFormData, 
+import {
+  STEPS,
+  SignupFormData,
 } from '@/components/auth/signup/types';
 
 // Default values for the form data
@@ -37,7 +37,7 @@ interface SignupContextType {
   // Form data state
   formData: SignupFormData;
   updateFormData: (updates: Partial<SignupFormData>) => void;
-  
+
   // Step management
   currentStep: number;
   goToNextStep: () => void;
@@ -45,7 +45,7 @@ interface SignupContextType {
   skipCurrentStep: () => void;
   isFirstStep: boolean;
   isLastStep: boolean;
-  
+
   // Validation state
   validateCurrentStep: () => boolean;
   errors: ValidationErrors;
@@ -54,7 +54,7 @@ interface SignupContextType {
   setFieldTouched: (field: string, touched?: boolean) => void;
   touchAllFields: () => void;
   setProfileStepValid: (isValid: boolean) => void;
-  
+
   // Submission
   isSubmitting: boolean;
   handleSubmit: () => Promise<void>;
@@ -62,13 +62,13 @@ interface SignupContextType {
 
 const SignupContext = createContext<SignupContextType | undefined>(undefined);
 
-export const SignupProvider: React.FC<{ 
-  children: ReactNode, 
-  onStepChange?: (step: number) => void 
+export const SignupProvider: React.FC<{
+  children: ReactNode,
+  onStepChange?: (step: number) => void
 }> = ({ children, onStepChange }) => {
   const navigate = useNavigate();
   const { signup } = useAuth();
-  
+
   // Form state management
   const [formData, setFormData] = useState<SignupFormData>(initialFormData);
   const [currentStep, setCurrentStep] = useState(0);
@@ -98,12 +98,12 @@ export const SignupProvider: React.FC<{
   // Touch all fields - useful for validation on submit
   const touchAllFields = useCallback(() => {
     const allFields: Record<string, boolean> = {};
-    
+
     // Account step fields
     if (currentStep === 0) {
       allFields['email'] = true;
       allFields['password'] = true;
-    } 
+    }
     // Loyalty card step fields
     else if (currentStep === 1) {
       if (formData.migros.isConnected) {
@@ -123,7 +123,7 @@ export const SignupProvider: React.FC<{
         }
       });
     }
-    
+
     setTouchedFields(prev => ({
       ...prev,
       ...allFields
@@ -138,7 +138,7 @@ export const SignupProvider: React.FC<{
     }
 
     const newErrors: ValidationErrors = {};
-    
+
     // Account step validation (email & password)
     if (currentStep === 0) {
       if (!formData.email) {
@@ -146,13 +146,13 @@ export const SignupProvider: React.FC<{
       } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
         newErrors.email = "Please enter a valid email address";
       }
-      
+
       if (!formData.password) {
         newErrors.password = "Password is required";
       } else if (formData.password.length < 8) {
         newErrors.password = "Password must be at least 8 characters";
       }
-    } 
+    }
     // Loyalty card step validation
     else if (currentStep === 1) {
       // Only validate if the user has connected a loyalty card
@@ -167,7 +167,7 @@ export const SignupProvider: React.FC<{
           newErrors['migros.credentials'] = "Migros credentials are invalid";
         }
       }
-      
+
       if (formData.coop.isConnected) {
         if (!formData.coop.email) {
           newErrors['coop.email'] = "Coop email is required";
@@ -179,46 +179,46 @@ export const SignupProvider: React.FC<{
           newErrors['coop.credentials'] = "Coop credentials are invalid";
         }
       }
-    } 
+    }
     // Profile step validation
     else if (currentStep === 2) {
       // Only validate fields that have values
       if (formData.profile.name && formData.profile.name.length < 2) {
         newErrors['profile.name'] = "Name must be at least 2 characters";
       }
-      
+
       if (formData.profile.age) {
         const age = parseInt(formData.profile.age);
         if (isNaN(age) || age < 12 || age > 120) {
           newErrors['profile.age'] = "Age must be between 12 and 120";
         }
       }
-      
+
       if (formData.profile.height) {
         const height = parseInt(formData.profile.height);
         if (isNaN(height) || height < 50 || height > 300) {
           newErrors['profile.height'] = "Height must be between 50 and 300 cm";
         }
       }
-      
+
       if (formData.profile.weight) {
         const weight = parseInt(formData.profile.weight);
         if (isNaN(weight) || weight < 20 || weight > 500) {
           newErrors['profile.weight'] = "Weight must be between 20 and 500 kg";
         }
       }
-      
+
       if (formData.profile.nutritionalGoal === 'other' && !formData.profile.nutritionalGoalOther) {
         newErrors['profile.nutritionalGoalOther'] = "Please specify your nutritional goal";
       }
     }
-    
+
     setErrors(newErrors);
     const valid = Object.keys(newErrors).length === 0;
     setIsStepValid(valid);
     return valid;
   }, [currentStep, formData, profileStepValid]);
-  
+
   // Handle step transitions
   const goToNextStep = useCallback(() => {
     if (currentStep < STEPS.length - 1) {
@@ -233,7 +233,7 @@ export const SignupProvider: React.FC<{
       }
     }
   }, [currentStep, validateCurrentStep, touchAllFields, onStepChange]);
-  
+
   const goToPreviousStep = useCallback(() => {
     if (currentStep > 0) {
       const newStep = currentStep - 1;
@@ -241,7 +241,7 @@ export const SignupProvider: React.FC<{
       if (onStepChange) onStepChange(newStep);
     }
   }, [currentStep, onStepChange]);
-  
+
   // Set default values for skipped steps
   const getDefaultStepValues = useCallback((stepIndex: number): Partial<SignupFormData> => {
     switch (stepIndex) {
@@ -270,16 +270,16 @@ export const SignupProvider: React.FC<{
     }
   }, []);
 
-    // Form submission
+  // Form submission
   const handleSubmit = useCallback(async () => {
     // Check if the current step is valid
     if (!validateCurrentStep() && currentStep !== STEPS.length - 1) {
       touchAllFields();
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Prepare signup data
       const signupData = {
@@ -288,22 +288,24 @@ export const SignupProvider: React.FC<{
         connectedLoyaltyCard: formData.connectedLoyaltyCard,
         profileData: formData.profile
       } as any;
-      
+
       // Add retailer credentials if connected
       if (formData.migros.isConnected) {
         signupData.migrosEmail = formData.migros.email;
         signupData.migrosPassword = formData.migros.password;
       }
-      
+
       if (formData.coop.isConnected) {
         signupData.coopEmail = formData.coop.email;
         signupData.coopPassword = formData.coop.password;
       }
-      
+
       // Submit form to API
       await signup(signupData);
       console.log(signupData);
       toast.success("Account created successfully");
+      // Set flag for welcome popup
+      sessionStorage.setItem("newUserSignup", "true");
       navigate("/");
     } catch (error) {
       console.error("Signup error:", error);
@@ -316,21 +318,21 @@ export const SignupProvider: React.FC<{
       setIsSubmitting(false);
     }
   }, [formData, validateCurrentStep, touchAllFields, currentStep, navigate, signup]);
-  
+
   // Skip the current step
   const skipCurrentStep = useCallback(() => {
     if (currentStep === 0) {
       // First step cannot be skipped
       return;
     }
-    
+
     // Apply default values for the skipped step
     const defaultValues = getDefaultStepValues(currentStep);
     setFormData(prev => ({
       ...prev,
       ...defaultValues
     }));
-    
+
     // If it's the last step, submit the form, otherwise go to next step
     if (currentStep === STEPS.length - 1) {
       handleSubmit();
@@ -340,11 +342,11 @@ export const SignupProvider: React.FC<{
       if (onStepChange) onStepChange(newStep);
     }
   }, [currentStep, getDefaultStepValues, onStepChange, handleSubmit]);
-   
+
   // Check if we're on the first or last step
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === STEPS.length - 1;
-  
+
   // Run validation when data changes
   React.useEffect(() => {
     validateCurrentStep();
@@ -356,7 +358,7 @@ export const SignupProvider: React.FC<{
       setIsStepValid(profileStepValid);
     }
   }, [currentStep, profileStepValid]);
-  
+
   const contextValue: SignupContextType = {
     formData,
     updateFormData,
@@ -376,7 +378,7 @@ export const SignupProvider: React.FC<{
     isSubmitting,
     handleSubmit
   };
-  
+
   return (
     <SignupContext.Provider value={contextValue}>
       {children}
