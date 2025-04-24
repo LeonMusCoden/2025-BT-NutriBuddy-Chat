@@ -1,10 +1,64 @@
 import { Table } from '../../ui/table';
+import { format } from 'date-fns';
 
 interface GraphDBTableProps {
   data: any;
 }
 
 export function GraphDBTable({ data }: GraphDBTableProps) {
+  // Process and format a cell value based on its content
+  const formatCellValue = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    
+    // Check if value is or can be parsed as a date
+    if (value instanceof Date || typeof value === 'string' && isISODateString(value)) {
+      try {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return format(date, 'MMM d, yyyy');
+        }
+      } catch (error) {
+        // If date parsing fails, continue to other checks
+      }
+    }
+    
+    // Check if value is or can be parsed as a number
+    if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
+      try {
+        const num = typeof value === 'number' ? value : parseFloat(value);
+        // Only format if it's actually a number and has decimal places
+        if (!isNaN(num)) {
+          // If it's a whole number, don't show decimal places
+          return Number.isInteger(num) ? num.toString() : num.toFixed(2);
+        }
+      } catch (error) {
+        // If number parsing fails, continue to other checks
+      }
+    }
+    
+    // Handle string values - clean any URLs
+    if (typeof value === 'string') {
+      return cleanString(value);
+    }
+    
+    // Default fallback - convert to string
+    return String(value);
+  };
+
+  // Helper function to check if a string is an ISO date format
+  const isISODateString = (value: string): boolean => {
+    // Basic ISO date pattern check - will catch most date formats from APIs
+    const isoPattern = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(.\d{3})?Z?)?$/;
+    return isoPattern.test(value);
+  };
+
+  // Remove URL prefixes for cleaner display
+  const cleanString = (value: string): string => {
+    return value
+      .replace('https://interactions.ics.unisg.ch/foodcoach#', '')
+      .replace('http://qudt.org/vocab/unit#', '');
+  };
+
   // Handle different data formats
   let tableData: Record<string, any> = {};
   let columns: string[] = [];
@@ -39,7 +93,8 @@ export function GraphDBTable({ data }: GraphDBTableProps) {
         const rowObj: Record<string, any> = {};
         
         columns.forEach(column => {
-          rowObj[column] = tableData[column][i.toString()];
+          const rawValue = tableData[column][i.toString()];
+          rowObj[column] = formatCellValue(rawValue);
         });
         
         rows.push(rowObj);
@@ -54,13 +109,23 @@ export function GraphDBTable({ data }: GraphDBTableProps) {
     return <div>No data available</div>;
   }
   
+  // Format the column headers for display
+  const formatColumnName = (name: string): string => {
+    // Capitalize first letter and convert camelCase to spaces
+    return name
+      // Insert a space before all capital letters
+      .replace(/([A-Z])/g, ' $1')
+      // Capitalize the first character
+      .replace(/^./, str => str.toUpperCase());
+  };
+  
   return (
-    <Table.Root variant="surface" className="rounded-md">
+    <Table.Root variant="surface" className="rounded-md w-full">
       <Table.Header>
         <Table.Row>
           {columns.map((column, index) => (
             <Table.ColumnHeaderCell key={index}>
-              {column}
+              {formatColumnName(column)}
             </Table.ColumnHeaderCell>
           ))}
         </Table.Row>
