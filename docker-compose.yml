@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=development
-        - VITE_API_URL=http://localhost:8123
+        - VITE_API_URL=https://nutri-buddy.ch:8123
         - VITE_ASSISTANT_ID=nutribuddy v1.2.1
         - VITE_LANGSMITH_API_KEY=M26v4Y3uLhGu
     ports:
